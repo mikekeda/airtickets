@@ -1,0 +1,92 @@
+/* CSS declarations go here */
+body {
+  padding-top: 60px;
+}
+
+h1.navbar-brand {
+  margin: 0;
+}
+
+#map {
+    height: 600px;
+}
+
+#find-tickets {
+    padding-top: 20px;
+}
+
+.has-feedback.has-clear {
+    /* Remove Internet Explorer native clear button */
+    input::-ms-clear {
+        display: none;
+    }
+
+    .form-control-clear {
+        color: #bbb;
+        color: rgba(0, 0, 0, 0.4);
+
+        /*
+         * Enable pointer events as they have been disabled since Bootstrap 3.3
+         * See https://github.com/twbs/bootstrap/pull/14104
+         */
+        pointer-events: auto;
+
+        &:hover {
+            color: #777;
+            color: rgba(0, 0, 0, 0.7);
+            cursor: pointer;
+        }
+    }
+
+    &.has-empty-value {
+        /* Do not display clear button if field has empty value */
+        .form-control-clear {
+            display: none;
+        }
+    }
+}
+
+.autocomplete-suggestions {
+    background-color: white;
+    border: 1px solid #ccc;
+    padding: 0;
+    overflow: auto;
+
+    .autocomplete-suggestion {
+        cursor: pointer;
+        padding: 10px 30px;
+    }
+
+    & + .autocomplete-suggestion {
+        border-top: 1px solid #ccc;
+    }
+}
+
+select.form-control {
+    margin-top: 15px;
+
+    & + .tooltip.left {
+        margin-left: -20px;
+    }
+}
+
+#js-routes {
+    li {
+        cursor: pointer;
+    }
+}
+
+.glyphicon.spinning {
+    animation: spin 1s infinite linear;
+    -webkit-animation: spin2 1s infinite linear;
+}
+
+@keyframes spin {
+    from { transform: scale(1) rotate(0deg); }
+    to { transform: scale(1) rotate(360deg); }
+}
+
+@-webkit-keyframes spin2 {
+    from { -webkit-transform: rotate(0deg); }
+    to { -webkit-transform: rotate(360deg); }
+}
