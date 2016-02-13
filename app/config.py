@@ -49,7 +49,7 @@ class DefaultConfig(object):
     FREEZER_DESTINATION = os.path.dirname(os.path.abspath(__file__)) + '/../build'
 
     # the toolbar is only enabled in debug mode:
-    DEBUG = True
+    DEBUG = False
 
     # set a 'SECRET_KEY' to enable the Flask session cookies
     SECRET_KEY = 'A0Zr98j/3yX I~XHH!jmN]LWX/,?RT'
