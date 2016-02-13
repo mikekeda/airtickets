@@ -90,3 +90,12 @@ select.form-control {
     from { -webkit-transform: rotate(0deg); }
     to { -webkit-transform: rotate(360deg); }
 }
+
+.footer {
+    margin-top: 20px;
+    padding: 10px;
+
+    p {
+        margin: 0;
+    }
+}

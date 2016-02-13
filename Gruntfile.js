@@ -22,7 +22,7 @@ module.exports = function(grunt) {
           outputStyle: 'compressed'
         },
         files: {
-          'app/static/css/main.css': 'app/static/sass/style.scss'
+          'app/static/css/main.css': 'app/sass/style.scss'
         }
       },
     },
@@ -62,7 +62,7 @@ module.exports = function(grunt) {
     },*/
     watch: {
       css: {
-        files: 'app/static/sass/**/*.scss',
+        files: 'app/sass/**/*.scss',
         tasks: ['sass']
       },
       js: {
