@@ -1,0 +1,44 @@
+web:
+  image: mikekeda/airtickets:latest
+  environment:
+    DOCKER: 'true'
+    NEO4J_REST_URL: http://neo4j:7474/db/data/
+  ports:
+    - "8080:5000"
+  volumes:
+    - ./data/app:/app
+  links:
+    - neo4j
+    - postgres
+    - redis
+
+neo4j:
+  image: neo4j:latest
+  ports:
+    - "7474:7474"
+  environment:
+    NEO4J_AUTH: none
+  volumes:
+    - ./data/neo4j:/var/lib/neo4j/data
+    - ./data/neo4j-plugins:/plugins
+
+postgres:
+  image: postgres:latest
+  ports:
+    - "5432:5432"
+  volumes:
+    - ./data/postgres/data:/volume/postgres/data
+    - ./data/postgres/log:/var/log/postgresql
+    - ./data/postgres/etc:/etc/postgresql
+  environment:
+    POSTGRES_USER: airtickets
+    POSTGRES_PASSWORD: airtickets
+    POSTGRES_DB: airtickets
+    PGDATA: /volume/postgres/data
+
+redis:
+  image: redis:latest
+  ports:
+    - "6379:6379"
+  volumes:
+    - ./data/redis:/data
