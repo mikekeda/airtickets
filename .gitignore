@@ -13,3 +13,4 @@ _mailinglist
 .idea/
 node_modules
 dump.rdb
+src/
