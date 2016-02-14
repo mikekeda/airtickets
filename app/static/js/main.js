@@ -73,6 +73,16 @@ $(document).ready(function () {
                 if ($(el).attr('id') === "from" || $(el).attr('id') === "to") {
                     processCitySelect(suggestion, el);
                 }
+            },
+            transformResult: function (response) {
+                return {
+                    suggestions: $.map($.parseJSON(response).suggestions, function (item) {
+                        return {
+                            value: item.value + ' (' + item.data.country_code + ')',
+                            data: item.data
+                        };
+                    })
+                };
             }
         });
     });

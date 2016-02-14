@@ -257,6 +257,7 @@ class CityName(db.Model, ModelMixin):
                 'id': self.city.id,
                 'lng': self.city.longitude,
                 'lat': self.city.latitude,
+                'country_code': self.city.country_code,
             },
         }
         return result

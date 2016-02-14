@@ -70,6 +70,10 @@ select.form-control {
     }
 }
 
+.has-feedback .form-control {
+    padding-right: 30px;
+}
+
 #js-routes {
     li {
         cursor: pointer;
