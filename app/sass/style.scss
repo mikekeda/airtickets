@@ -103,3 +103,27 @@ select.form-control {
         margin: 0;
     }
 }
+
+@media (min-width: 768px) {
+    #map-wraper.affix {
+        width: 532.5px;
+    }
+}
+
+@media (min-width: 992px) {
+    #map-wraper.affix {
+        width: 697.5px;
+    }
+}
+
+@media (min-width: 1200px) {
+    #map-wraper.affix {
+        width: 847.5px;
+    }
+}
+
+@media (max-width: 768px) {
+    .affix {
+        position: static;
+    }
+}
