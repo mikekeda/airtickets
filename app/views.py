@@ -2,7 +2,7 @@ from flask import render_template, jsonify, request, abort
 from app import app, City, LanguageScript, CityName, Route, Airport, NeoAirport, NeoRoute
 import os, sys
 from sqlalchemy.orm import joinedload
-from extensions import cache, redis_store
+from extensions import cache, redis_store, engine, db
 from redis.exceptions import ConnectionError
 import cPickle as pickle
 
@@ -54,7 +54,12 @@ def autocomplete_cities():
     except ConnectionError:
         redis_is_connected = False
 
-    cities = CityName.query.options(joinedload(CityName.city)).filter(CityName.name.like(query + '%')).limit(10).all()
+    try:
+        cities = CityName.query.options(joinedload(CityName.city)).filter(CityName.name.like(query + '%')).limit(10).all()
+    except:
+        db.session.close()
+        engine.connect()
+        cities = CityName.query.options(joinedload(CityName.city)).filter(CityName.name.like(query + '%')).limit(10).all()
 
     result = jsonify(suggestions=[city.autocomplete_serialize() for city in cities])
 
