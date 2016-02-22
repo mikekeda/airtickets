@@ -68,7 +68,7 @@ $(document).ready(function () {
     /*jslint unparam: true*/
     $('input.ajax-autocomplete').each(function (index, el) {
         $(el).autocomplete({
-            deferRequestBy: 300,
+            deferRequestBy: 100,
             serviceUrl: '/ajax/autocomplete/' + $(el).data('autocomplete-name'),
             onSelect: function (suggestion) {
                 if ($(el).attr('id') === "from" || $(el).attr('id') === "to") {
