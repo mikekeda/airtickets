@@ -2,7 +2,7 @@ from flask import render_template, jsonify, request, abort
 from app import app, City, LanguageScript, CityName, Route, Airport, NeoAirport, NeoRoute
 import os, sys
 from sqlalchemy.orm import joinedload
-from extensions import cache, redis_store, engine, db
+from extensions import cache, redis_store, engine, db, es
 from redis.exceptions import ConnectionError
 import cPickle as pickle
 
@@ -46,6 +46,7 @@ def autocomplete_cities():
 
     redis_key = '|'.join(['autocomplete_cities', query])
 
+    # Try to find with Redis.
     try:
         result = redis_store.get(redis_key)
         redis_is_connected = True
@@ -54,14 +55,26 @@ def autocomplete_cities():
     except ConnectionError:
         redis_is_connected = False
 
+    # Try to find with Elasticsearch.
     try:
-        cities = CityName.query.options(joinedload(CityName.city)).filter(CityName.name.like(query + '%')).limit(10).all()
+        cities = es.search(index='main-index', from_=0, size=10, doc_type='CityName', body= {
+            "query": {"match_phrase_prefix": {'value.folded': {'query': query}}}
+        })
+        result = jsonify(suggestions=[city['_source'] for city in cities['hits']['hits']])
+        elasticsearch_is_connected = True
     except:
-        db.session.close()
-        engine.connect()
-        cities = CityName.query.options(joinedload(CityName.city)).filter(CityName.name.like(query + '%')).limit(10).all()
+        elasticsearch_is_connected = False
 
-    result = jsonify(suggestions=[city.autocomplete_serialize() for city in cities])
+    # Try to find with PostgreSQL.
+    if not elasticsearch_is_connected:
+        try:
+            cities = CityName.query.options(joinedload(CityName.city)).filter(CityName.name.like(query + '%')).limit(10).all()
+        except:
+            db.session.close()
+            engine.connect()
+            cities = CityName.query.options(joinedload(CityName.city)).filter(CityName.name.like(query + '%')).limit(10).all()
+
+        result = jsonify(suggestions=[city.autocomplete_serialize() for city in cities])
 
     if redis_is_connected:
         redis_store.set(redis_key, pickle.dumps(result))

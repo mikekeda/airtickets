@@ -45,6 +45,11 @@ class DefaultConfig(object):
     else:
         REDIS_URL = "redis://:@localhost:6379/0"
 
+    if 'ELASTICSEARCH_HOST' in os.environ:
+        ELASTICSEARCH_HOST = os.environ['ELASTICSEARCH_HOST']
+    else:
+        ELASTICSEARCH_HOST = "localhost:9200"
+
     # Determines the destination of the build. Only usefull if you're using Frozen-Flask.
     FREEZER_DESTINATION = os.path.dirname(os.path.abspath(__file__)) + '/../build'
 

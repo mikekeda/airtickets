@@ -262,6 +262,16 @@ class CityName(db.Model, ModelMixin):
         }
         return result
 
+    def elastic_serialize(self):
+        """serialize for elastic."""
+        result = {
+            '_index': 'main-index',
+            '_type': 'CityName',
+            '_id': self.city_id,
+            '_source': self.autocomplete_serialize()
+        }
+        return result
+
 
 class Airport(db.Model, ModelMixin):
     __tablename__ = 'airport'

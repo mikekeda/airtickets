@@ -17,7 +17,10 @@ from flask_migrate import upgrade
 from flask.ext.migrate import Migrate, MigrateCommand
 
 from app import *
-from extensions import db
+from extensions import db, es
+from sqlalchemy.orm import joinedload
+from elasticsearch import helpers
+
 
 current_dir = os.path.dirname(os.path.realpath(__file__))
 
@@ -276,6 +279,55 @@ def import_all():
     import_neo_airports()
     import_neo_routes()
 
+
+
+@manager.command
+def create_cities_index():
+    ITEMS_PER_PAGE = 1000
+
+    index_body = {
+        "settings": {
+            "index" : {
+                "analysis": {
+                    "analyzer": {
+                        "folding": {
+                            "tokenizer": "standard",
+                            "filter":  [ "lowercase", "asciifolding" ]
+                        }
+                    }
+                }
+            }
+        },
+        "mappings": {
+            "CityName": {
+                "properties": {
+                    "value": {
+                        "type": "string",
+                        "index": "not_analyzed",
+                        "fields": {
+                            "folded": {
+                                "type": "string",
+                                "analyzer": "folding"
+                            }
+                        }
+                    },
+                    "data": {
+                        "type": "nested"
+                    }
+                }
+            }
+        }
+    }
+    es.indices.create(index='main-index', body=index_body)
+
+    num_of_items = CityName.query.count()
+    num_of_pages = num_of_items // ITEMS_PER_PAGE + 1
+    for page in range(num_of_pages):
+        docs = []
+        for city_name in CityName.query.options(joinedload(CityName.city)).offset(page * ITEMS_PER_PAGE).limit(ITEMS_PER_PAGE).all():
+            docs.append(city_name.elastic_serialize())
+        helpers.bulk(es, docs)
+        print page, 'from', num_of_pages
 
 @manager.command
 def test():
