@@ -60,6 +60,7 @@ $(document).ready(function () {
         $input.trigger('cleared');
         if ($input.attr('id') === "from" || $input.attr('id') === "to") {
             $input.siblings('select').hide();
+            $input.siblings('select').empty();
             processCityClear($input.attr('id'));
         }
     });
@@ -70,6 +71,15 @@ $(document).ready(function () {
         $(el).autocomplete({
             deferRequestBy: 150,
             serviceUrl: '/ajax/autocomplete/' + $(el).data('autocomplete-name'),
+            onSearchStart: function (query) {
+                $(el).siblings('.glyphicon-refresh').show();
+            },
+            onSearchComplete: function (query) {
+                $(el).siblings('.glyphicon-refresh').hide();
+            },
+            onSearchError: function (query, jqXHR, textStatus, errorThrown) {
+                $(el).siblings('.glyphicon-refresh').hide();
+            },
             onSelect: function (suggestion) {
                 if ($(el).attr('id') === "from" || $(el).attr('id') === "to") {
                     processCitySelect(suggestion, el);
@@ -95,49 +105,63 @@ $(document).ready(function () {
             s,
             $li,
             $container,
-            $js_routes = $('#js-routes');
+            $js_routes = $('#js-routes'),
+            form_data = $(this).serialize();
         event.preventDefault();
         $js_routes.empty();
         $(this).find('[type="submit"] i').show();
 
-        /*jslint unparam: true*/
-        $.ajax({
-            url: '/ajax/routes?' + $(this).serialize(),
-            type: 'GET',
-            dataType: 'json'
-        })
-            .success(function (data, textStatus, jqXHR) {
-                if (Object.keys(data.routes)) {
-                    for (i in data.routes) {
-                        if (data.routes.hasOwnProperty(i)) {
-                            $container = $('<ul />');
-                            for (k = 0; k < data.routes[i].length; k += 1) {
-                                $li = $('<li />');
-                                $li.data('route', []);
-                                for (j = 0; j < data.routes[i][k].nodes.length; j += 1) {
-                                    $li.data('route').push({
-                                        lat: parseFloat(data.routes[i][k].nodes[j].latitude),
-                                        lng: parseFloat(data.routes[i][k].nodes[j].longitude)
-                                    });
-                                    s = '<span>' + data.routes[i][k].nodes[j].airport_name + '</span>';
-                                    if (j < data.routes[i][k].nodes.length - 1) {
-                                        s += ' - ';
-                                    } else {
-                                        s += ' (' + parseInt(data.routes[i][k].total_distance, 10) + 'km)';
+        if (form_data) {
+            /*jslint unparam: true*/
+            $.ajax({
+                url: '/ajax/routes?' + form_data,
+                type: 'GET',
+                dataType: 'json'
+            })
+                .success(function (data, textStatus, jqXHR) {
+                    $js_routes.append('<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>');
+                    $js_routes.children('.close').click(function (event) {
+                        $js_routes.empty();
+                    });
+
+                    if (!$.isEmptyObject(data.routes)) {
+                        for (i in data.routes) {
+                            if (data.routes.hasOwnProperty(i)) {
+                                $container = $('<ul />');
+                                for (k = 0; k < data.routes[i].length; k += 1) {
+                                    $li = $('<li />');
+                                    $li.data('route', []);
+                                    for (j = 0; j < data.routes[i][k].nodes.length; j += 1) {
+                                        $li.data('route').push({
+                                            lat: parseFloat(data.routes[i][k].nodes[j].latitude),
+                                            lng: parseFloat(data.routes[i][k].nodes[j].longitude)
+                                        });
+                                        s = '<span>' + data.routes[i][k].nodes[j].airport_name + '</span>';
+                                        if (j < data.routes[i][k].nodes.length - 1) {
+                                            s += ' - ';
+                                        } else {
+                                            s += ' (' + parseInt(data.routes[i][k].total_distance, 10) + 'km)';
+                                        }
+                                        $li.append(s);
                                     }
-                                    $li.append(s);
+                                    $container.append($li);
                                 }
-                                $container.append($li);
+                                s = '<h4>Routes with ' + i + ' transfers:</h4>';
+                                $js_routes.append(s);
+                                $js_routes.append($container);
                             }
-                            s = '<h4>Routes with ' + i + ' transfers:</h4>';
-                            $js_routes.append(s);
-                            $js_routes.append($container);
                         }
+                    } else {
+                        $js_routes.append('<h4>No Routes</h4>');
                     }
-                }
-                $('#find-tickets [type="submit"] i').hide();
-            });
-        /*jslint unparam: false*/
+                })
+                .complete(function (data, textStatus, jqXHR) {
+                    $('#find-tickets [type="submit"] i').hide();
+                });
+            /*jslint unparam: false*/
+        } else {
+            $('#find-tickets [type="submit"] i').hide();
+        }
     });
 
     $('#js-routes').on({

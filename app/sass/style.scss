@@ -20,6 +20,13 @@ h1.navbar-brand {
 }
 
 .has-feedback.has-clear {
+    &.has-empty-value {
+        /* Do not display clear button if field has empty value */
+        .form-control-clear {
+            display: none;
+        }
+    }
+
     /* Remove Internet Explorer native clear button */
     input::-ms-clear {
         display: none;
@@ -42,11 +49,11 @@ h1.navbar-brand {
         }
     }
 
-    &.has-empty-value {
-        /* Do not display clear button if field has empty value */
-        .form-control-clear {
-            display: none;
-        }
+    .glyphicon-refresh {
+        opacity: 0.4;
+        position: absolute;
+        right: 25px;
+        top: 10px;
     }
 }
 
@@ -79,6 +86,14 @@ select.form-control {
 }
 
 #js-routes {
+    position: relative;
+
+    .close {
+        position: absolute;
+        right: 0;
+        top: -5px;
+    }
+
     li {
         cursor: pointer;
     }
