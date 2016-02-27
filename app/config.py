@@ -45,16 +45,18 @@ class DefaultConfig(object):
     else:
         REDIS_URL = "redis://:@localhost:6379/0"
 
-    if 'ELASTICSEARCH_HOST' in os.environ:
-        ELASTICSEARCH_HOST = os.environ['ELASTICSEARCH_HOST']
-    else:
-        ELASTICSEARCH_HOST = "localhost:9200"
-
     # Determines the destination of the build. Only usefull if you're using Frozen-Flask.
     FREEZER_DESTINATION = os.path.dirname(os.path.abspath(__file__)) + '/../build'
 
     # the toolbar is only enabled in debug mode:
     DEBUG = False
+
+    if 'ELASTICSEARCH_HOST' in os.environ:
+        ELASTICSEARCH_HOST = os.environ['ELASTICSEARCH_HOST']
+    elif DEBUG:
+        ELASTICSEARCH_HOST = "localhost:9200"
+    else:
+        ELASTICSEARCH_HOST = "https://search-airtickets-6aavei7kapha2cprygxh75fj7m.us-west-2.es.amazonaws.com"
 
     # set a 'SECRET_KEY' to enable the Flask session cookies
     SECRET_KEY = 'A0Zr98j/3yX I~XHH!jmN]LWX/,?RT'
