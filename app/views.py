@@ -58,7 +58,26 @@ def autocomplete_cities():
     # Try to find with Elasticsearch.
     try:
         cities = es.search(index='main-index', from_=0, size=10, doc_type='CityName', body= {
-            "query": {"match_phrase_prefix": {'value.folded': {'query': query}}}
+            "query": {
+                "bool": {
+                    "should": {
+                        "match_phrase_prefix": {
+                            'value.folded': {
+                                'query': query,
+                                'boost': 10
+                            }
+                        }
+                    },
+                    "must": {
+                        "match_phrase_prefix": {
+                            'value.folded': {
+                                'query': query,
+                                'fuzziness': 'AUTO'
+                            }
+                        },
+                    }
+                }
+            }
         })
         result = jsonify(suggestions=[city['_source'] for city in cities['hits']['hits']])
         elasticsearch_is_connected = True
