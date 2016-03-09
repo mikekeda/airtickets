@@ -47,6 +47,14 @@ $(document).ready(function () {
         if (event.originalEvent.state !== null && event.originalEvent.state.content !== null) {
             $('#content').html(event.originalEvent.state.content);
             set_active_link(window.location.pathname);
+            if (window.location.pathname == '/') {
+                try {
+                    initMap();
+                }
+                catch(err) {
+                    $('#content').append('<script defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCTbl1EudJoUWSj2XqQZ6tK_VLwT74ppt4&callback=initMap">');
+                }
+            }
         }
     });
 
