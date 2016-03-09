@@ -1,5 +1,5 @@
 /*jslint browser: true*/
-/*global processCityClear, processCitySelect, google, map*/
+/*global processCityClear, processCitySelect, google, map, initMap*/
 
 $(document).ready(function () {
     "use strict";
@@ -27,11 +27,10 @@ $(document).ready(function () {
                     set_active_link($link.attr("href"));
                     $(".modal-backdrop.in").remove();
                     history.pushState({content: data}, null, $link.attr("href"));
-                    if ($link.attr("href") == '/') {
+                    if ($link.attr("href") === '/') {
                         try {
                             initMap();
-                        }
-                        catch(err) {
+                        } catch (err) {
                             $('#content').append('<script defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCTbl1EudJoUWSj2XqQZ6tK_VLwT74ppt4&callback=initMap">');
                         }
                     }
@@ -47,11 +46,10 @@ $(document).ready(function () {
         if (event.originalEvent.state !== null && event.originalEvent.state.content !== null) {
             $('#content').html(event.originalEvent.state.content);
             set_active_link(window.location.pathname);
-            if (window.location.pathname == '/') {
+            if (window.location.pathname === '/') {
                 try {
                     initMap();
-                }
-                catch(err) {
+                } catch (err) {
                     $('#content').append('<script defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCTbl1EudJoUWSj2XqQZ6tK_VLwT74ppt4&callback=initMap">');
                 }
             }
