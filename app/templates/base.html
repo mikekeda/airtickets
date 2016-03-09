@@ -30,20 +30,14 @@
           <div class="container">
             <ul class="nav navbar-nav">
               <li class="{% if active_page == 'index' %}active{% endif %}"><a href="{{ url_for('index') }}" class="ajax-link">Home</a></li>
+              <li class="{% if active_page == 'technologies' %}active{% endif %}"><a href="{{ url_for('technologies') }}" class="ajax-link">Technologies</a></li>
             </ul>
           </div>
         </div>
       </nav>
 
-      <div class="row">
-        <div class="col-sm-3 sidebar col-xs-12 pull-left">
-          <div class="sidebar-nav">
-            {% block sidebar %}{% endblock %}
-          </div>
-        </div>
-        <div id="content" class="col-sm-9 col-xs-12 content">
+      <div id="content" class="row">
           {% block content %}{% endblock %}
-        </div>
       </div>
 
       <footer class="footer navbar-default navbar-bottom">
@@ -72,9 +66,9 @@
     <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jquery.devbridge-autocomplete/1.2.24/jquery.autocomplete.min.js"></script>
     <script defer src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
     <script defer src="{{ static('js/main.js') }}"></script>
+    <script defer src="{{ static('js/map.js') }}"></script>
 
     {% if active_page == 'index' %}
-      <script defer src="{{ static('js/map.js') }}"></script>
       <script defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCTbl1EudJoUWSj2XqQZ6tK_VLwT74ppt4&callback=initMap">
       <script type="text/javascript">// Prevent conflict between googleapis and ToolBar.</script>
     {% endif %}

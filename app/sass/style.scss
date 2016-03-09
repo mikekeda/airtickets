@@ -1,6 +1,10 @@
 /* CSS declarations go here */
 body {
     padding-top: 60px;
+
+    @media (max-width: 768px) {
+        padding-top: 150px;
+    }
 }
 
 #content {
@@ -13,6 +17,36 @@ h1.navbar-brand {
 
 #map {
     height: 600px;
+}
+
+#technologies {
+    .thumbnail {
+        &:hover {
+            transform: scale(1.05);
+            transition: .2s;
+        }
+
+        a {
+            align-items: center;
+            display: flex;
+            justify-content: center;
+            height: 200px;
+
+            img {
+                max-height: 100%;
+            }
+
+            svg {
+                width: 100%;
+            }
+        }
+    }
+
+    .caption {
+        p {
+            min-height: 3em;
+        }
+    }
 }
 
 #find-tickets {

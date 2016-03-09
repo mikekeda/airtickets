@@ -27,6 +27,14 @@ $(document).ready(function () {
                     set_active_link($link.attr("href"));
                     $(".modal-backdrop.in").remove();
                     history.pushState({content: data}, null, $link.attr("href"));
+                    if ($link.attr("href") == '/') {
+                        try {
+                            initMap();
+                        }
+                        catch(err) {
+                            $('#content').append('<script defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCTbl1EudJoUWSj2XqQZ6tK_VLwT74ppt4&callback=initMap">');
+                        }
+                    }
                 })
                 .fail(function () {
                     window.location.replace($link.attr("href"));

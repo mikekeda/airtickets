@@ -38,6 +38,13 @@ def index():
     return render_template('index.html')
 
 
+@app.route('/ajax/technologies')
+@app.route('/technologies')
+def technologies():
+    """About page."""
+    return render_template('technologies.html')
+
+
 @cache.cached(timeout=12 * 60 * 60)
 @app.route('/ajax/autocomplete/cities')
 def autocomplete_cities():
