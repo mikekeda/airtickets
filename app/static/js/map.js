@@ -40,9 +40,8 @@ function addMarker(name, lat, lng) {
             });
 
         google.maps.event.addListener(marker, 'click', (function (marker) {
-            var map_info = function () {
+            return function () {
                 var text = name;
-                // infowindow.setContent(text);
                 infowindow.setContent(
                     text +
                         '<br>' +
@@ -51,7 +50,6 @@ function addMarker(name, lat, lng) {
                 );
                 infowindow.open(map, marker);
             };
-            return map_info;
         })(marker));
 
         markers.push([lat, lng]);
@@ -81,20 +79,22 @@ function processCitySelect(suggestion, el) {
         });
     /*jslint unparam: false*/
 
-    from_to_bounds[$(el).attr('id')] = new google.maps.LatLng(suggestion.data.lat, suggestion.data.lng);
+    if (isLocationFree([suggestion.data.lat, suggestion.data.lng])) {
+        from_to_bounds[$(el).attr('id')] = new google.maps.LatLng(suggestion.data.lat, suggestion.data.lng);
 
-    addMarker(suggestion.value, suggestion.data.lat, suggestion.data.lng);
+        addMarker(suggestion.value, suggestion.data.lat, suggestion.data.lng);
 
-    if (from_to_bounds.hasOwnProperty('from')) {
-        bounds.extend(from_to_bounds.from);
-    }
+        if (from_to_bounds.hasOwnProperty('from')) {
+            bounds.extend(from_to_bounds.from);
+        }
 
-    if (from_to_bounds.hasOwnProperty('to')) {
-        bounds.extend(from_to_bounds.to);
-    }
+        if (from_to_bounds.hasOwnProperty('to')) {
+            bounds.extend(from_to_bounds.to);
+        }
 
-    if (from_to_bounds.hasOwnProperty('from') || from_to_bounds.hasOwnProperty('to')) {
-        map.fitBounds(bounds);
+        if (from_to_bounds.hasOwnProperty('from') || from_to_bounds.hasOwnProperty('to')) {
+            map.fitBounds(bounds);
+        }
     }
 }
 
@@ -102,9 +102,18 @@ function setMapFormField(field, name, lat, lng) {
     "use strict";
     if (field === 'from' || field === 'to') {
         var selector = 'input#' + field,
-            bounds = new google.maps.LatLngBounds();
+            bounds = new google.maps.LatLngBounds(),
+            suggestion = {
+                'value': name,
+                'data': {
+                    'lat': lat,
+                    'lng': lng
+                }
+            };
 
         $(selector).val(name);
+        $(selector).parents('.form-group').removeClass('has-empty-value');
+        processCitySelect(suggestion, selector);
         from_to_bounds[field] = new google.maps.LatLng(lat, lng);
         if (from_to_bounds.hasOwnProperty('from') && from_to_bounds.hasOwnProperty('to')) {
             bounds.extend(from_to_bounds.from);
@@ -114,9 +123,12 @@ function setMapFormField(field, name, lat, lng) {
     }
 }
 
+/* Initialize google map */
 function initMap() {
     "use strict";
     var xhr,
+        timer,
+        circle,
         language = window.navigator.userLanguages || window.navigator.languages;
     map = new google.maps.Map(document.getElementById('map'), {
         center: {lat: -34.397, lng: 150.644},
@@ -125,6 +137,9 @@ function initMap() {
 
     console.log(language);
 
+    from_to_bounds = [];
+    markers = [];
+
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(function (position) {
             var initialLocation = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
@@ -132,33 +147,61 @@ function initMap() {
         });
     }
 
-    // google.maps.event.addListener(map, "bounds_changed", function () {
-    //     // send the new bounds back to your server
-    //     var ne_lng = map.getBounds().getNorthEast().lng(),
-    //         ne_lat = map.getBounds().getNorthEast().lat(),
-    //         sw_lng = map.getBounds().getSouthWest().lng(),
-    //         sw_lat = map.getBounds().getSouthWest().lat();
+    google.maps.event.addListener(map, "mousemove", function (event) {
+        clearTimeout(timer);
 
-    //     if (xhr && xhr.readyState !== 4) {
-    //         xhr.abort();
-    //     }
+        if (null != circle) {
+            circle.setMap(null);
+            circle = null;
+        }
 
-    //     /*jslint unparam: true*/
-    //     xhr = $.ajax({
-    //         url: '/ajax/get-cities/' + ne_lng + '/' + ne_lat + '/' + sw_lng + '/' + sw_lat + '/',
-    //         type: 'GET',
-    //         dataType: 'json'
-    //     })
-    //         .success(function (data, textStatus, jqXHR) {
-    //             var i;
-    //             for (i = 0; i < data.json_list.length; i += 1) {
-    //                 addMarker(
-    //                     data.json_list[i].city_names[0].toString(),
-    //                     data.json_list[i].latitude,
-    //                     data.json_list[i].longitude
-    //                 );
-    //             }
-    //         });
-    //     /*jslint unparam: false*/
-    // });
+        timer = setTimeout(function () {
+            circle = new google.maps.Circle({
+                map: map,
+                radius: 3000000 / Math.pow(2, map.getZoom()),    // in metres
+                center: new google.maps.LatLng(event.latLng.lat(), event.latLng.lng()),
+                strokeColor: "#006DFC",
+                strokeOpacity: 0.4,
+                strokeWeight: 1,
+                fillColor: "#006DFC",
+                fillOpacity: 0.15
+            });
+
+            if (xhr && xhr.readyState !== 4) {
+                xhr.abort();
+            }
+
+            /*jslint unparam: true*/
+            xhr = $.ajax({
+                url: '/ajax/get-cities',
+                type: 'GET',
+                data: {
+                    'ne_lng': circle.getBounds().getNorthEast().lng(),
+                    'ne_lat': circle.getBounds().getNorthEast().lat(),
+                    'sw_lng': circle.getBounds().getSouthWest().lng(),
+                    'sw_lat': circle.getBounds().getSouthWest().lat()
+                },
+                dataType: 'json'
+            })
+                .success(function (data, textStatus, jqXHR) {
+                    var i;
+                    for (i = 0; i < data.json_list.length; i += 1) {
+                        addMarker(
+                            data.json_list[i].city_names[0].toString(),
+                            data.json_list[i].latitude,
+                            data.json_list[i].longitude
+                        );
+                    }
+                    circle.setMap(null);
+                    circle = null;
+                });
+            /*jslint unparam: false*/
+
+        }, 2000);
+    });
+
+    google.maps.event.addListener(map, "mouseout", function () {
+        clearTimeout(timer);
+    });
+
 }

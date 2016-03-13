@@ -158,17 +158,36 @@ def routes():
 
     return result
 
+@cache.cached(timeout=300) # is it work for json?
+@app.route('/ajax/get-cities')
+def get_cities():
+    # supported_languages = LanguageScript.query.with_entities(LanguageScript.language_script).all()
+    # print supported_languages
+    # lang = request.accept_languages.best_match(supported_languages)
+    # print request.accept_languages
+    ne_lng = request.args.get('ne_lng')
+    ne_lat = request.args.get('ne_lat')
+    sw_lng = request.args.get('sw_lng')
+    sw_lat = request.args.get('sw_lat')
 
-# # Todo: impruve this
-# @cache.cached(timeout=300) # is it work for json?
-# @app.route('/ajax/get-cities/<ne_lng>/<ne_lat>/<sw_lng>/<sw_lat>/')
-# def get_cities(ne_lng, ne_lat, sw_lng, sw_lat):
-#     # supported_languages = LanguageScript.query.with_entities(LanguageScript.language_script).all()
-#     # print supported_languages
-#     # lang = request.accept_languages.best_match(supported_languages)
-#     # print request.accept_languages
-#     cities = City.query.options(joinedload(City.city_names)).filter(City.longitude < float(ne_lng)).\
-#         filter(City.latitude < float(ne_lat)).\
-#         filter(City.longitude > float(sw_lng)).\
-#         filter(City.latitude > float(sw_lat)).limit(10).all()
-#     return jsonify(json_list=[city.serialize() for city in cities])
+    redis_key = '|'.join(['get_cities', ne_lng, ne_lat, sw_lng, sw_lat])
+
+    try:
+        result = redis_store.get(redis_key)
+        redis_is_connected = True
+        if result:
+            return pickle.loads(result)
+    except ConnectionError:
+        redis_is_connected = False
+
+    cities = City.query.options(joinedload(City.city_names)).filter(City.longitude < float(ne_lng)).\
+        filter(City.latitude < float(ne_lat)).\
+        filter(City.longitude > float(sw_lng)).\
+        filter(City.latitude > float(sw_lat)).limit(10).all()
+
+    result = jsonify(json_list=[city.serialize() for city in cities])
+
+    if redis_is_connected:
+        redis_store.set(redis_key, pickle.dumps(result))
+
+    return result
