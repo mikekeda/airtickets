@@ -91,7 +91,7 @@ def autocomplete_cities():
     except:
         elasticsearch_is_connected = False
 
-    # Try to find with PostgreSQL.
+    # Try to find with PostgreSQL (reconnect to db if got an error).
     if not elasticsearch_is_connected:
         try:
             cities = CityName.query.options(joinedload(CityName.city)).filter(CityName.name.like(query + '%')).limit(10).all()
@@ -172,6 +172,7 @@ def get_cities():
 
     redis_key = '|'.join(['get_cities', ne_lng, ne_lat, sw_lng, sw_lat])
 
+    # Try to find with Redis.
     try:
         result = redis_store.get(redis_key)
         redis_is_connected = True
@@ -180,10 +181,19 @@ def get_cities():
     except ConnectionError:
         redis_is_connected = False
 
-    cities = City.query.options(joinedload(City.city_names)).filter(City.longitude < float(ne_lng)).\
-        filter(City.latitude < float(ne_lat)).\
-        filter(City.longitude > float(sw_lng)).\
-        filter(City.latitude > float(sw_lat)).limit(10).all()
+    # Try to find with PostgreSQL (reconnect to db if got an error).
+    try:
+        cities = City.query.options(joinedload(City.city_names)).filter(City.longitude < float(ne_lng)).\
+            filter(City.latitude < float(ne_lat)).\
+            filter(City.longitude > float(sw_lng)).\
+            filter(City.latitude > float(sw_lat)).limit(10).all()
+    except:
+        db.session.close()
+        engine.connect()
+        cities = City.query.options(joinedload(City.city_names)).filter(City.longitude < float(ne_lng)).\
+            filter(City.latitude < float(ne_lat)).\
+            filter(City.longitude > float(sw_lng)).\
+            filter(City.latitude > float(sw_lat)).limit(10).all()
 
     result = jsonify(json_list=[city.serialize() for city in cities])
 
