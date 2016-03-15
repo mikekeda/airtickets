@@ -4,7 +4,7 @@
 {% block title %}Route finder{% endblock %}
 
 {% block content %}
-  <div class="col-sm-3 sidebar col-xs-12 pull-left">
+  <div class="col-md-2 col-sm-3 col-xs-12 sidebar pull-left">
     <div class="sidebar-nav">
       <h3>Route planner</h3>
       <div class="navbar navbar-default" role="navigation">
@@ -40,10 +40,8 @@
     </div>
   </div>
 
-  <div class="col-sm-9 col-xs-12 content">
-    <div class="container-fluid" id="map-wraper" data-spy="affix" data-offset-top="0">
-        <div id="map"></div>
-    </div>
+  <div class="col-md-10 col-sm-9 col-xs-12 content" id="map-wraper">
+      <div id="map" class="row"></div>
   </div>
 
 {% endblock %}
