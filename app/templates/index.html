@@ -10,27 +10,27 @@
       <div class="navbar navbar-default" role="navigation">
         <form class="form-horizontal container-fluid" id="find-tickets" name="find-tickets" method="get" action="/ajax/routes">
           <div class="form-group has-feedback has-clear">
-            <label class="control-label col-md-4" for="from">From:</label>
-            <div class="col-md-8">
+            <label class="control-label col-lg-4" for="from">From:</label>
+            <div class="col-lg-8">
               <input type="text" class="form-control ajax-autocomplete" id="from" data-autocomplete-name="cities" placeholder="City">
               <i class="glyphicon glyphicon-refresh spinning" style="display: none;"></i>
               <span class="glyphicon glyphicon-remove-sign form-control-feedback form-control-clear" aria-hidden="true"></span>
-              <select class="form-control" id="from_airport" name="from_airport" title="Closest airports (5 by default), sorted by distance, no further than 500 km." data-toggle="tooltip" data-placement="left" style="display: none;">
+              <select class="form-control" id="from_airport" name="from_airport" title="Closest airports (5 by default), sorted by distance, no further than 500 km." data-toggle="tooltip" data-placement="right" style="display: none;">
               </select>
             </div>
           </div>
           <div class="form-group has-feedback has-clear">
-            <label class="control-label col-md-4" for="to">To:</label>
-            <div class="col-md-8">
+            <label class="control-label col-lg-4" for="to">To:</label>
+            <div class="col-lg-8">
               <input type="text" class="form-control ajax-autocomplete" id="to" data-autocomplete-name="cities" placeholder="City">
               <i class="glyphicon glyphicon-refresh spinning" style="display: none;"></i>
               <span class="glyphicon glyphicon-remove-sign form-control-feedback form-control-clear" aria-hidden="true"></span>
-              <select class="form-control" id="to_airport" name="to_airport" title="Closest airports (5 by default), sorted by distance, no further than 500 km." data-toggle="tooltip" data-placement="left" style="display: none;">
+              <select class="form-control" id="to_airport" name="to_airport" title="Closest airports (5 by default), sorted by distance, no further than 500 km." data-toggle="tooltip" data-placement="right" style="display: none;">
               </select>
             </div>
           </div>
           <div class="form-group">
-            <div class="col-md-offset-4 col-md-8">
+            <div class="col-lg-offset-4 col-lg-8">
               <button type="submit" class="btn btn-default">Find <i class="glyphicon glyphicon-refresh spinning" style="display: none;"></i></button>
             </div>
           </div>

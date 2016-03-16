@@ -1,6 +1,6 @@
 /* CSS declarations go here */
 body {
-    padding-top: 60px;
+    padding-top: 50px;
 
     @media (max-width: 768px) {
         padding-top: 150px;
@@ -8,7 +8,13 @@ body {
 }
 
 #content {
-    min-height: 600px;
+    min-height: calc(100vh - 110px);
+
+    .sidebar-nav {
+        h3 {
+            margin-top: 10px;
+        }
+    }
 }
 
 h1.navbar-brand {
@@ -16,7 +22,7 @@ h1.navbar-brand {
 }
 
 #map {
-    height: 600px;
+    height: calc(100vh - 90px);
 }
 
 #technologies {
@@ -110,8 +116,16 @@ h1.navbar-brand {
 select.form-control {
     margin-top: 15px;
 
-    & + .tooltip.left {
-        margin-left: -20px;
+    & + .tooltip {
+        min-width: 300px;
+
+        &.left {
+            margin-left: -20px;
+        }
+
+        &.right {
+            margin-right: -20px;
+        }
     }
 }
 
@@ -157,7 +171,9 @@ select.form-control {
     }
 }
 
-#map-wraper {
-    right: 0;
-    position: fixed;
+@media (min-width: 768px) {
+    #map-wraper {
+        right: 0;
+        position: fixed;
+    }
 }
