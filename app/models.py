@@ -180,13 +180,14 @@ class City(db.Model, ModelMixin):
     language_code = db.Column(db.String(16))
     latitude = db.Column(db.Float)
     longitude = db.Column(db.Float)
+    population = db.Column(db.Integer, default=0)
 
     city_names = db.relationship('CityName', backref=db.backref('city_names'))
 
     def __repr__(self):
         return '<City %r>' % self.id
 
-    def __init__(self, gns_ufi, latitude, longitude, country_code='US', subdivision_code=51, gns_fd='PPL', language_code='en'):
+    def __init__(self, gns_ufi, latitude, longitude, country_code='US', subdivision_code=51, gns_fd='PPL', language_code='en', population=0):
         self.gns_ufi = gns_ufi
         self.latitude = latitude
         self.longitude = longitude
@@ -194,6 +195,7 @@ class City(db.Model, ModelMixin):
         self.subdivision_code = subdivision_code
         self.gns_fd = gns_fd
         self.language_code = language_code
+        self.population = population
 
     def serialize(self):
         """serialize."""
@@ -206,6 +208,7 @@ class City(db.Model, ModelMixin):
             'subdivision_code': self.subdivision_code,
             'gns_fd': self.gns_fd,
             'language_code': self.language_code,
+            'population': self.population,
             'city_names': [name.name for name in self.city_names],
         }
         return result
@@ -251,26 +254,31 @@ class CityName(db.Model, ModelMixin):
 
     def autocomplete_serialize(self):
         """serialize for autocomplete."""
-        result = {
+        return {
             'value': self.name,
             'data': {
                 'id': self.city.id,
                 'lng': self.city.longitude,
                 'lat': self.city.latitude,
                 'country_code': self.city.country_code,
+                'population': self.city.population
             },
         }
-        return result
 
     def elastic_serialize(self):
         """serialize for elastic."""
-        result = {
+        serialize_dict = self.autocomplete_serialize()
+        serialize_dict['location'] = {
+            "lat" : self.city.latitude,
+            "lon" : self.city.longitude
+        }
+
+        return {
             '_index': 'main-index',
             '_type': 'CityName',
             '_id': self.city_id,
-            '_source': self.autocomplete_serialize()
+            '_source': serialize_dict
         }
-        return result
 
 
 class Airport(db.Model, ModelMixin):

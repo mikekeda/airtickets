@@ -2,6 +2,8 @@ from flask import render_template, jsonify, request, abort
 from app import app, City, LanguageScript, CityName, Route, Airport, NeoAirport, NeoRoute
 import os, sys
 from sqlalchemy.orm import joinedload
+from sqlalchemy.sql.expression import nullslast
+from sqlalchemy import desc
 from extensions import cache, redis_store, engine, db, es
 from redis.exceptions import ConnectionError
 import cPickle as pickle
@@ -84,6 +86,11 @@ def autocomplete_cities():
                         },
                     }
                 }
+            },
+            "sort": {
+                "population": {
+                    "order": "asc"
+                }
             }
         })
         result = jsonify(suggestions=[city['_source'] for city in cities['hits']['hits']])
@@ -94,11 +101,11 @@ def autocomplete_cities():
     # Try to find with PostgreSQL (reconnect to db if got an error).
     if not elasticsearch_is_connected:
         try:
-            cities = CityName.query.options(joinedload(CityName.city)).filter(CityName.name.like(query + '%')).limit(10).all()
+            cities = CityName.query.options(joinedload(CityName.city)).filter(CityName.name.like(query + '%')).order_by(nullslast(desc('population'))).limit(10).all()
         except:
             db.session.close()
             engine.connect()
-            cities = CityName.query.options(joinedload(CityName.city)).filter(CityName.name.like(query + '%')).limit(10).all()
+            cities = CityName.query.options(joinedload(CityName.city)).filter(CityName.name.like(query + '%')).order_by(nullslast(desc('population'))).limit(10).all()
 
         result = jsonify(suggestions=[city.autocomplete_serialize() for city in cities])
 

@@ -311,6 +311,9 @@ def create_cities_index():
                             }
                         }
                     },
+                    "location": {
+                        "type" : "geo_point"
+                    },
                     "data": {
                         "type": "nested"
                     }
@@ -318,6 +321,11 @@ def create_cities_index():
             }
         }
     }
+
+    try:
+        es.indices.delete(index="main-index")
+    except Exception, e:
+        pass
     es.indices.create(index='main-index', body=index_body)
 
     num_of_items = CityName.query.count()
@@ -330,22 +338,27 @@ def create_cities_index():
         print page, 'from', num_of_pages
 
 @manager.command
-def test():
-    # jim = Person(name='Jim', age=3).save()
-    # jim.age = 4
-    # jim.save() # validation happens here
-    # jim.delete()
-    # jim.refresh() # reload properties from neo
+def import_populations(file_name='csv_data/cities-populations.csv'):
+    """import populations."""
+    if file_name[0] != '/':
+        file_name = current_dir + '/' + file_name
 
-    #add node to geom index
-    # url = app.config['NEO4J_URL'] + "/db/data/ext/SpatialPlugin/graphdb/findGeometriesWithinDistance"
-    # payload = {'layer': 'geom', 'pointY': 46.8625, 'pointX': -114.0117, 'distanceInKm': 175}
-    # r = requests.post(url, data=json.dumps(payload), headers=headers)
+    with open(file_name, 'rb') as csvfile:
+        spamreader = csv.DictReader(csvfile)
+        for idx, row in enumerate(spamreader):
+            if row['Population']:
+                # (joinedload(City.city_names))
+                cities = City.query.options()\
+                    .filter(City.latitude == float(row['Latitude']))\
+                    .filter(City.longitude == float(row['Longitude']))\
+                    .all()
 
-    # print r.json()
+                for city in cities:
+                    if row['City'].lower() in [c.name.lower() for c in city.city_names]:
+                        city.population = int(row['Population'])
+                        city.save()
 
-    print NeoAirport.get_distance(-50, 5, 58, -30)
-
+                        print idx, row['City'],  row['Country'], 'population', row['Population']
 
 if __name__ == "__main__":
     manager.run()
