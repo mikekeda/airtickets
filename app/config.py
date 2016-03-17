@@ -49,7 +49,7 @@ class DefaultConfig(object):
     FREEZER_DESTINATION = os.path.dirname(os.path.abspath(__file__)) + '/../build'
 
     # the toolbar is only enabled in debug mode:
-    DEBUG = True
+    DEBUG = False
 
     if 'ELASTICSEARCH_HOST' in os.environ:
         ELASTICSEARCH_HOST = os.environ['ELASTICSEARCH_HOST']
