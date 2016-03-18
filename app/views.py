@@ -190,17 +190,21 @@ def get_cities():
 
     # Try to find with PostgreSQL (reconnect to db if got an error).
     try:
-        cities = City.query.options(joinedload(City.city_names)).filter(City.longitude < float(ne_lng)).\
-            filter(City.latitude < float(ne_lat)).\
-            filter(City.longitude > float(sw_lng)).\
-            filter(City.latitude > float(sw_lat)).limit(10).all()
+        cities = City.query.options(joinedload(City.city_names))\
+                    .filter(City.longitude < float(ne_lng))\
+                    .filter(City.latitude < float(ne_lat))\
+                    .filter(City.longitude > float(sw_lng))\
+                    .filter(City.latitude > float(sw_lat))\
+                    .order_by(nullslast(desc(City.population))).limit(10).all()
     except:
         db.session.close()
         engine.connect()
-        cities = City.query.options(joinedload(City.city_names)).filter(City.longitude < float(ne_lng)).\
-            filter(City.latitude < float(ne_lat)).\
-            filter(City.longitude > float(sw_lng)).\
-            filter(City.latitude > float(sw_lat)).limit(10).all()
+        cities = City.query.options(joinedload(City.city_names))\
+                    .filter(City.longitude < float(ne_lng))\
+                    .filter(City.latitude < float(ne_lat))\
+                    .filter(City.longitude > float(sw_lng))\
+                    .filter(City.latitude > float(sw_lat))\
+                    .order_by(nullslast(desc(City.population))).limit(10).all()
 
     result = jsonify(json_list=[city.serialize() for city in cities])
 
