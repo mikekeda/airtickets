@@ -74,12 +74,7 @@ def autocomplete_cities():
                         "match_phrase_prefix": {
                             "value.folded": {
                                 "query": query,
-                                "boost": 10,
-                                "sort": {
-                                    "population": {
-                                        "order": 'asc'
-                                    }
-                                }
+                                "boost": 10
                             }
                         }
                     },
@@ -91,6 +86,11 @@ def autocomplete_cities():
                             }
                         },
                     }
+                }
+            },
+            "sort": {
+                "population": {
+                    "order": 'desc'
                 }
             }
         })
