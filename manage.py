@@ -314,6 +314,9 @@ def create_cities_index():
                     "location": {
                         "type" : "geo_point"
                     },
+                    "population": {
+                        "type" : "integer"
+                    },
                     "data": {
                         "type": "nested"
                     }

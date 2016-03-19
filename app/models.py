@@ -260,8 +260,7 @@ class CityName(db.Model, ModelMixin):
                 'id': self.city.id,
                 'lng': self.city.longitude,
                 'lat': self.city.latitude,
-                'country_code': self.city.country_code,
-                'population': self.city.population
+                'country_code': self.city.country_code
             },
         }
 
@@ -272,6 +271,7 @@ class CityName(db.Model, ModelMixin):
             "lat" : self.city.latitude,
             "lon" : self.city.longitude
         }
+        serialize_dict['population'] = getattr(self.city, 'population', 0)
 
         return {
             '_index': 'main-index',

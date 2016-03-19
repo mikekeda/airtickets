@@ -7,6 +7,7 @@ from sqlalchemy import desc
 from extensions import cache, redis_store, engine, db, es
 from redis.exceptions import ConnectionError
 import cPickle as pickle
+import math
 
 BASE_TEMPLATES_DIR = os.path.dirname(os.path.abspath(__file__)) + '/templates'
 
@@ -71,25 +72,25 @@ def autocomplete_cities():
                 "bool": {
                     "should": {
                         "match_phrase_prefix": {
-                            'value.folded': {
-                                'query': query,
-                                'boost': 10
+                            "value.folded": {
+                                "query": query,
+                                "boost": 10,
+                                "sort": {
+                                    "population": {
+                                        "order": 'asc'
+                                    }
+                                }
                             }
                         }
                     },
                     "must": {
                         "match_phrase_prefix": {
-                            'value.folded': {
-                                'query': query,
-                                'fuzziness': 'AUTO'
+                            "value.folded": {
+                                "query": query,
+                                "fuzziness": 'AUTO'
                             }
                         },
                     }
-                }
-            },
-            "sort": {
-                "population": {
-                    "order": "asc"
                 }
             }
         })
@@ -172,12 +173,12 @@ def get_cities():
     # print supported_languages
     # lang = request.accept_languages.best_match(supported_languages)
     # print request.accept_languages
-    ne_lng = request.args.get('ne_lng')
-    ne_lat = request.args.get('ne_lat')
-    sw_lng = request.args.get('sw_lng')
-    sw_lat = request.args.get('sw_lat')
+    ne_lng = float(request.args.get('ne_lng'))
+    ne_lat = float(request.args.get('ne_lat'))
+    sw_lng = float(request.args.get('sw_lng'))
+    sw_lat = float(request.args.get('sw_lat'))
 
-    redis_key = '|'.join(['get_cities', ne_lng, ne_lat, sw_lng, sw_lat])
+    redis_key = '|'.join(['get_cities', str(ne_lng), str(ne_lat), str(sw_lng), str(sw_lat)])
 
     # Try to find with Redis.
     try:
@@ -188,25 +189,60 @@ def get_cities():
     except ConnectionError:
         redis_is_connected = False
 
-    # Try to find with PostgreSQL (reconnect to db if got an error).
+    # Try to find with Elasticsearch.
     try:
-        cities = City.query.options(joinedload(City.city_names))\
-                    .filter(City.longitude < float(ne_lng))\
-                    .filter(City.latitude < float(ne_lat))\
-                    .filter(City.longitude > float(sw_lng))\
-                    .filter(City.latitude > float(sw_lat))\
-                    .order_by(nullslast(desc(City.population))).limit(10).all()
-    except:
-        db.session.close()
-        engine.connect()
-        cities = City.query.options(joinedload(City.city_names))\
-                    .filter(City.longitude < float(ne_lng))\
-                    .filter(City.latitude < float(ne_lat))\
-                    .filter(City.longitude > float(sw_lng))\
-                    .filter(City.latitude > float(sw_lat))\
-                    .order_by(nullslast(desc(City.population))).limit(10).all()
+        cities = es.search(index='main-index', from_=0, size=10, doc_type='CityName', body= {
+            "query": {
+                "filtered": {
+                    "filter": {
+                        "geo_distance": {
+                            "distance": str(NeoAirport.get_distance(ne_lat, ne_lng, sw_lat, sw_lng) / 2 / math.sqrt(2)) + 'km',
+                            "location": {
+                                "lat": (ne_lat + sw_lat) / 2,
+                                "lon": (ne_lng + sw_lng) / 2
+                            }
+                        }
+                    }
+                }
+            },
+            "sort": {
+                "population": {
+                    "order": 'desc'
+                }
+            }
+        })
 
-    result = jsonify(json_list=[city.serialize() for city in cities])
+        result = jsonify(json_list=[{
+            'city_names': [city['_source']['value']],
+            'latitude': city['_source']['data']['lat'],
+            'longitude': city['_source']['data']['lng'],
+            'population': city['_source']['population']
+        } for city in cities['hits']['hits']])
+
+        elasticsearch_is_connected = True
+    except:
+        elasticsearch_is_connected = False
+
+    # Try to find with PostgreSQL (reconnect to db if got an error).
+    if not elasticsearch_is_connected:
+        try:
+            cities = City.query.options(joinedload(City.city_names))\
+                        .filter(City.longitude < ne_lng)\
+                        .filter(City.latitude < ne_lat)\
+                        .filter(City.longitude > sw_lng)\
+                        .filter(City.latitude > sw_lat)\
+                        .order_by(nullslast(desc(City.population))).limit(10).all()
+        except:
+            db.session.close()
+            engine.connect()
+            cities = City.query.options(joinedload(City.city_names))\
+                        .filter(City.longitude < ne_lng)\
+                        .filter(City.latitude < ne_lat)\
+                        .filter(City.longitude > sw_lng)\
+                        .filter(City.latitude > sw_lat)\
+                        .order_by(nullslast(desc(City.population))).limit(10).all()
+
+        result = jsonify(json_list=[city.serialize() for city in cities])
 
     if redis_is_connected:
         redis_store.set(redis_key, pickle.dumps(result))
