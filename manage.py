@@ -363,5 +363,94 @@ def import_populations(file_name='csv_data/cities-populations.csv'):
 
                         print idx, row['City'],  row['Country'], 'population', row['Population']
 
+
+@manager.command
+def import_flightstats_airports(file_name='csv_data/flightstats_airports.csv'):
+    """import airports from flightstats."""
+    if file_name[0] != '/':
+        file_name = current_dir + '/' + file_name
+
+    url = app.config['FLIGHTSTATS_URL'] + '/flex/airports/rest/v1/json/active'
+    params = {'appId': app.config['FLIGHTSTATS_APPID'], 'appKey': app.config['FLIGHTSTATS_APPKEY']}
+    res = requests.get(url, params=params)
+
+    if res.status_code == 200:
+
+        with open(file_name, 'w') as csvfile:
+            spamwriter = csv.writer(csvfile)
+
+            json_data = res.json()['airports']
+
+            headers = []
+
+            for row in json_data:
+                for key in row.keys():
+                    if not key in headers:
+                        headers.append(key)
+
+            spamwriter.writerow(headers)
+
+            for idx, row in enumerate(json_data):
+                item_values = []
+
+                for key in headers:
+                    value = row.get(key, '')
+
+                    if isinstance(value, basestring):
+                        item_values.append(value.encode('utf-8'))
+                    else:
+                        item_values.append(value)
+
+                spamwriter.writerow(item_values)
+
+                print idx, row['name']
+
+            csvfile.close()
+
+
+@manager.command
+def import_flightstats_airlines(file_name='csv_data/flightstats_airlines.csv'):
+    """import airlines from flightstats."""
+    if file_name[0] != '/':
+        file_name = current_dir + '/' + file_name
+
+    url = app.config['FLIGHTSTATS_URL'] + '/flex/airlines/rest/v1/json/active'
+    params = {'appId': app.config['FLIGHTSTATS_APPID'], 'appKey': app.config['FLIGHTSTATS_APPKEY']}
+    res = requests.get(url, params=params)
+
+    if res.status_code == 200:
+
+        with open(file_name, 'w') as csvfile:
+            spamwriter = csv.writer(csvfile)
+
+            json_data = res.json()['airlines']
+
+            headers = []
+
+            for row in json_data:
+                for key in row.keys():
+                    if not key in headers:
+                        headers.append(key)
+
+            spamwriter.writerow(headers)
+
+            for idx, row in enumerate(json_data):
+                item_values = []
+
+                for key in headers:
+                    value = row.get(key, '')
+
+                    if isinstance(value, basestring):
+                        item_values.append(value.encode('utf-8'))
+                    else:
+                        item_values.append(value)
+
+                spamwriter.writerow(item_values)
+
+                print idx, row['name']
+
+            csvfile.close()
+
+
 if __name__ == "__main__":
     manager.run()

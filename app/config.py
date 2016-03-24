@@ -62,3 +62,7 @@ class DefaultConfig(object):
     SECRET_KEY = 'A0Zr98j/3yX I~XHH!jmN]LWX/,?RT'
 
     SQLALCHEMY_TRACK_MODIFICATIONS = True
+
+    FLIGHTSTATS_URL = 'https://api.flightstats.com'
+    FLIGHTSTATS_APPID = 'f62cb23f'
+    FLIGHTSTATS_APPKEY = '0d529248e16f6be628602b8a47315883'
