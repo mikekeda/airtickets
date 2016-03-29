@@ -1,5 +1,5 @@
 /*jslint browser: true*/
-/*global processCityClear, processCitySelect, google, map, initMap*/
+/*global processCityClear, processCitySelect, google, map, initMap, clearMarkers*/
 
 $(document).ready(function () {
     "use strict";
@@ -178,6 +178,7 @@ $(document).ready(function () {
         }
     });
 
+    /* Process route hover (show the route on the map) */
     $('#js-routes').on({
         mouseenter: function () {
             var flightPath = new google.maps.Polyline({
@@ -194,5 +195,10 @@ $(document).ready(function () {
             $(this).data('flightPath').setMap(null);
         }
     }, 'li');
+
+    /* Process input clear */
+    $('#clean-map').on('click', function () {
+        clearMarkers();
+    });
 
 });

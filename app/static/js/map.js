@@ -11,8 +11,10 @@ function isLocationFree(search) {
     "use strict";
     var i,
         l = markers.length;
+
     for (i = 0; i < l; i += 1) {
-        if (markers[i][0] === search[0] && markers[i][1] === search[1]) {
+        if ((Math.abs(markers[i].position.lat() - search[0]) < 1e-6)
+            && (Math.abs(markers[i].position.lng() - search[1]) < 1e-6)) {
             return false;
         }
     }
@@ -24,11 +26,35 @@ function processCityClear(id) {
     delete from_to_bounds[id];
 }
 
+function setMapFormField(field, name, lat, lng) {
+    "use strict";
+    if (field === 'from' || field === 'to') {
+        var selector = 'input#' + field,
+            bounds = new google.maps.LatLngBounds(),
+            suggestion = {
+                'value': name,
+                'data': {
+                    'lat': lat,
+                    'lng': lng
+                }
+            };
+
+        $(selector).val(name);
+        $(selector).parents('.form-group').removeClass('has-empty-value');
+        processCitySelect(suggestion, selector);
+        from_to_bounds[field] = new google.maps.LatLng(lat, lng);
+        if (from_to_bounds.hasOwnProperty('from') && from_to_bounds.hasOwnProperty('to')) {
+            bounds.extend(from_to_bounds.from);
+            bounds.extend(from_to_bounds.to);
+            map.fitBounds(bounds);
+        }
+    }
+}
+
 function addMarker(name, lat, lng) {
     "use strict";
     if (isLocationFree([lat, lng])) {
-        var infowindow = new google.maps.InfoWindow(),
-            markerImage = new google.maps.MarkerImage('/static/img/dot.png',
+        var markerImage = new google.maps.MarkerImage('/static/img/dot.png',
                 new google.maps.Size(16, 16), //size
                 null,
                 new google.maps.Point(8, 8)), // offset point
@@ -39,20 +65,39 @@ function addMarker(name, lat, lng) {
                 map: map
             });
 
-        google.maps.event.addListener(marker, 'click', (function (marker) {
+        google.maps.event.addListener(marker, 'mouseover', (function (marker) {
             return function () {
                 var text = name;
-                infowindow.setContent(
+
+                marker.infowindow = new google.maps.InfoWindow();
+                marker.infowindow.setContent(
                     text +
                         '<br>' +
-                        '<button onclick="setMapFormField(\'from\', \'' + text + '\', \'' + lat + '\', \'' + lng + '\')">From</button>' +
-                        '<button onclick="setMapFormField(\'to\', \'' + text + '\', \'' + lat + '\', \'' + lng + '\')">To</button>'
+                        'Right Click=From  Left Click=To'
                 );
-                infowindow.open(map, marker);
+                marker.infowindow.open(map, marker);
             };
         })(marker));
 
-        markers.push([lat, lng]);
+        google.maps.event.addListener(marker, 'mouseout', (function (marker) {
+            return function () {
+                marker.infowindow.close();
+            };
+        })(marker));
+
+        google.maps.event.addListener(marker, 'click', (function () {
+            return function () {
+                setMapFormField('to', name, lat, lng);
+            };
+        })(marker));
+
+        google.maps.event.addListener(marker, 'rightclick', (function () {
+            return function () {
+                setMapFormField('from', name, lat, lng);
+            };
+        })(marker));
+
+        markers.push(marker);
     }
 }
 
@@ -98,29 +143,14 @@ function processCitySelect(suggestion, el) {
     }
 }
 
-function setMapFormField(field, name, lat, lng) {
+/* Remove all markers from the map */
+function clearMarkers() {
     "use strict";
-    if (field === 'from' || field === 'to') {
-        var selector = 'input#' + field,
-            bounds = new google.maps.LatLngBounds(),
-            suggestion = {
-                'value': name,
-                'data': {
-                    'lat': lat,
-                    'lng': lng
-                }
-            };
-
-        $(selector).val(name);
-        $(selector).parents('.form-group').removeClass('has-empty-value');
-        processCitySelect(suggestion, selector);
-        from_to_bounds[field] = new google.maps.LatLng(lat, lng);
-        if (from_to_bounds.hasOwnProperty('from') && from_to_bounds.hasOwnProperty('to')) {
-            bounds.extend(from_to_bounds.from);
-            bounds.extend(from_to_bounds.to);
-            map.fitBounds(bounds);
-        }
+    var i;
+    for (i = 0; i < markers.length; i += 1) {
+        markers[i].setMap(null);
     }
+    markers.length = 0;
 }
 
 /* Initialize google map */
@@ -267,20 +297,18 @@ function initMap() {
                     }
                 ]
             }
-        ];
-
-    var styledMap = new google.maps.StyledMapType(styles, {
-        name: "Styled Map"
-    });
-
-    var mapOptions = {
-        zoom: 5,
-        maxZoom: 10,
-        center: new google.maps.LatLng(-34.397, 150.644),
-        mapTypeControlOptions: {
-            mapTypeIds: [google.maps.MapTypeId.ROADMAP, 'map_style']
-        }
-    };
+        ],
+        styledMap = new google.maps.StyledMapType(styles, {
+            name: "Styled Map"
+        }),
+        mapOptions = {
+            zoom: 5,
+            maxZoom: 10,
+            center: new google.maps.LatLng(-34.397, 150.644),
+            mapTypeControlOptions: {
+                mapTypeIds: [google.maps.MapTypeId.ROADMAP, 'map_style']
+            }
+        };
 
     map = new google.maps.Map(document.getElementById('map'), mapOptions);
 
@@ -302,7 +330,7 @@ function initMap() {
     google.maps.event.addListener(map, "mousemove", function (event) {
         clearTimeout(timer);
 
-        if (null != circle) {
+        if (circle) {
             circle.setMap(null);
             circle = null;
         }
@@ -344,8 +372,10 @@ function initMap() {
                             data.json_list[i].longitude
                         );
                     }
-                    circle.setMap(null);
-                    circle = null;
+                    if (circle) {
+                        circle.setMap(null);
+                        circle = null;
+                    }
                 });
             /*jslint unparam: false*/
 
@@ -355,5 +385,4 @@ function initMap() {
     google.maps.event.addListener(map, "mouseout", function () {
         clearTimeout(timer);
     });
-
 }
