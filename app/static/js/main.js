@@ -96,7 +96,7 @@ $(document).ready(function () {
             },
             onSelect: function (suggestion) {
                 if ($(el).attr('id') === "from" || $(el).attr('id') === "to") {
-                    processCitySelect(suggestion, el);
+                    processCitySelect(suggestion, el, false);
                 }
             },
             transformResult: function (response) {

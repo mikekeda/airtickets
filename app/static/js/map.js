@@ -14,7 +14,7 @@ function isLocationFree(search) {
 
     for (i = 0; i < l; i += 1) {
         if ((Math.abs(markers[i].position.lat() - search[0]) < 1e-6)
-            && (Math.abs(markers[i].position.lng() - search[1]) < 1e-6)) {
+                && (Math.abs(markers[i].position.lng() - search[1]) < 1e-6)) {
             return false;
         }
     }
@@ -41,7 +41,7 @@ function setMapFormField(field, name, lat, lng) {
 
         $(selector).val(name);
         $(selector).parents('.form-group').removeClass('has-empty-value');
-        processCitySelect(suggestion, selector);
+        processCitySelect(suggestion, selector, false);
         from_to_bounds[field] = new google.maps.LatLng(lat, lng);
         if (from_to_bounds.hasOwnProperty('from') && from_to_bounds.hasOwnProperty('to')) {
             bounds.extend(from_to_bounds.from);
@@ -101,7 +101,7 @@ function addMarker(name, lat, lng) {
     }
 }
 
-function processCitySelect(suggestion, el) {
+function processCitySelect(suggestion, el, find_closest_city) {
     "use strict";
     var bounds = new google.maps.LatLngBounds(),
         airport_name,
@@ -110,21 +110,25 @@ function processCitySelect(suggestion, el) {
 
     /*jslint unparam: true*/
     $.ajax({
-        url: '/ajax/airports?lat=' + suggestion.data.lat + '&lng=' + suggestion.data.lng + '&limit=' + 5,
+        url: '/ajax/airports?lat=' + suggestion.data.lat + '&lng=' + suggestion.data.lng + '&limit=' + 5 + '&find_closest_city=' + find_closest_city,
         type: 'GET',
         dataType: 'json'
     })
         .success(function (data, textStatus, jqXHR) {
             $(el).siblings('select').slideDown().find('option').remove();
-            for (i = 0; i < data.json_list.length; i += 1) {
-                airport_name = data.json_list[i].name || data.json_list[i].airport_name;
-                string = '<option value="' + data.json_list[i].id + '">' + airport_name + '</option>';
+            for (i = 0; i < data.airports.length; i += 1) {
+                airport_name = data.airports[i].name || data.airports[i].airport_name;
+                string = '<option value="' + data.airports[i].id + '">' + airport_name + '</option>';
                 $(el).siblings('select').append(string);
+            }
+            if (find_closest_city && data.closest_city.value) {
+                $(el).val(data.closest_city.value);
+                addMarker(data.closest_city.value, data.closest_city.data.lat, data.closest_city.data.lng);
             }
         });
     /*jslint unparam: false*/
 
-    if (isLocationFree([suggestion.data.lat, suggestion.data.lng])) {
+    if (!find_closest_city && isLocationFree([suggestion.data.lat, suggestion.data.lng])) {
         from_to_bounds[$(el).attr('id')] = new google.maps.LatLng(suggestion.data.lat, suggestion.data.lng);
 
         addMarker(suggestion.value, suggestion.data.lat, suggestion.data.lng);
@@ -322,8 +326,15 @@ function initMap() {
 
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(function (position) {
-            var initialLocation = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
+            var initialLocation = new google.maps.LatLng(position.coords.latitude, position.coords.longitude),
+                suggestion = {
+                    data: {
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude
+                    }
+                };
             map.setCenter(initialLocation);
+            processCitySelect(suggestion, '#from', true);
         });
     }
 

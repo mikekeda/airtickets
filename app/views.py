@@ -120,11 +120,13 @@ def autocomplete_cities():
 @app.route('/ajax/airports')
 def airports():
     """Find closest airports."""
+    result = {}
     lat = float(request.args.get('lat'))
     lng = float(request.args.get('lng'))
     limit = int(request.args.get('limit')) or 1
+    find_closest_city = request.args.get('find_closest_city') == 'true'
 
-    redis_key = '|'.join(['airports', str(lat), str(lng), str(limit)])
+    redis_key = '|'.join(['airports', str(lat), str(lng), str(limit), str(find_closest_city)])
 
     try:
         result = redis_store.get(redis_key)
@@ -134,7 +136,47 @@ def airports():
     except ConnectionError:
         redis_is_connected = False
 
-    result = jsonify(json_list=NeoAirport.get_closest_airports(lat, lng, limit))
+    result['airports'] = NeoAirport.get_closest_airports(lat, lng, limit)
+
+    if find_closest_city:
+        # Try to find with Elasticsearch.
+        try:
+            cities = es.search(index='main-index', from_=0, size=1, doc_type='CityName', body= {
+                "query": {
+                    "filtered" : {
+                        "query" : {
+                            "match_all" : {}
+                        },
+                        "filter" : {
+                            "geo_distance" : {
+                                "distance" : "500km",
+                                "location" : {
+                                    "lat" : lat,
+                                    "lon" : lng
+                                }
+                            }
+                        }
+                    }
+                },
+                "sort": {
+                    "_geo_distance": {
+                        "location": {
+                            "lat": lat,
+                            "lon": lng
+                        },
+                        "order": "asc",
+                        "unit": "km"
+                    }
+                },
+                "size": 1
+            })
+            result['closest_city'] = cities['hits']['hits'][0]['_source']
+            elasticsearch_is_connected = True
+        except:
+            elasticsearch_is_connected = False
+            result['closest_city'] = 'todo' # Need to inplement this
+
+    result = jsonify(result)
 
     if redis_is_connected:
         redis_store.set(redis_key, pickle.dumps(result))
