@@ -120,7 +120,6 @@ def autocomplete_cities():
 @app.route('/ajax/airports')
 def airports():
     """Find closest airports."""
-    result = {}
     lat = float(request.args.get('lat'))
     lng = float(request.args.get('lng'))
     limit = int(request.args.get('limit')) or 1
@@ -136,6 +135,7 @@ def airports():
     except ConnectionError:
         redis_is_connected = False
 
+    result = {}
     result['airports'] = NeoAirport.get_closest_airports(lat, lng, limit)
 
     if find_closest_city:
