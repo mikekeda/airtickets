@@ -8,6 +8,7 @@ from neomodel import (StructuredNode, StructuredRel, StringProperty,
                       IntegerProperty, FloatProperty, BooleanProperty,
                       RelationshipFrom, RelationshipTo)
 from neomodel import db as neomodel_db
+from redis.exceptions import ConnectionError
 
 
 def _deg2rad(deg):
@@ -196,6 +197,57 @@ class City(db.Model, ModelMixin):
         self.gns_fd = gns_fd
         self.language_code = language_code
         self.population = population
+
+    @staticmethod
+    def get_closest_cities(lat, lng, limit=1, offset=0):
+        """get closest cities by coordinates."""
+
+        redis_key = '|'.join(['get_closest_cities', str(lat), str(lng), str(limit), str(offset)])
+
+        try:
+            result = redis_store.get(redis_key)
+            redis_is_connected = True
+            if result:
+                return pickle.loads(result)
+        except ConnectionError:
+            redis_is_connected = False
+
+        result = []
+        conn = engine.connect()
+
+        s = text(
+            "SELECT *, "
+            "("
+            "3959 * acos( cos( radians(:latitude) ) * cos( radians( latitude ) ) * "
+            "cos( radians( longitude ) - radians(:longitude) ) + sin( radians(:latitude) ) * "
+            "sin( radians( latitude ) ) )"
+            ") AS distance "
+            "FROM city "
+            "INNER JOIN cityname ON cityname.city_id = city.id "
+            "ORDER BY distance "
+            "LIMIT :limit OFFSET :offset")
+
+        raw_data = conn.execute(s, latitude=lat, longitude=lng, limit=limit, offset=offset).fetchall()
+
+        for raw_item in raw_data:
+            item = {
+                'id': raw_item[0],
+                'country_code': raw_item[1],
+                'data': {
+                    'lat': raw_item[6],
+                    'lng': raw_item[7]
+                },
+                'population': raw_item[8],
+                'value': raw_item[9],
+                'distance': raw_item[12]
+            }
+            result.append(item)
+
+        conn.close()
+        if  redis_is_connected:
+            redis_store.set(redis_key, pickle.dumps(result))
+
+        return result
 
     def serialize(self):
         """serialize."""

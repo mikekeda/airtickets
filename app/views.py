@@ -174,7 +174,7 @@ def airports():
             elasticsearch_is_connected = True
         except:
             elasticsearch_is_connected = False
-            result['closest_city'] = 'todo' # Need to inplement this
+            result['closest_city'] = City.get_closest_cities(lat, lng, 1)[0]
 
     result = jsonify(result)
 
