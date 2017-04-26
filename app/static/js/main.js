@@ -31,7 +31,7 @@ $(document).ready(function () {
                         try {
                             initMap();
                         } catch (err) {
-                            $('#content').append('<script defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCTbl1EudJoUWSj2XqQZ6tK_VLwT74ppt4&callback=initMap">');
+                            $('#content').append('<script defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA9pDB24wh9HRbh6J8wQxpjE_e39AJ5CeM&callback=initMap">');
                         }
                     }
                 })
