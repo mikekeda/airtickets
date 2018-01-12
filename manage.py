@@ -1,24 +1,16 @@
-#!/usr/bin/env python
-
-"""
-    This script provides some easy to use commands.
-"""
-
+"""This script provides some easy to use commands."""
 import csv
-import sys
 import os
 import requests
 import json
 
-from flask import current_app
-from flask_script import (Manager, Shell, Server, prompt, prompt_pass,
-                          prompt_bool)
-from flask_migrate import upgrade
-from flask.ext.migrate import Migrate, MigrateCommand
+from flask_script import Manager, Server
+from flask_migrate import Migrate, MigrateCommand
 
 from app import *
 from extensions import db, es
 from sqlalchemy.orm import joinedload
+from neomodel import db as neomodel_db
 from elasticsearch import helpers
 
 
@@ -40,7 +32,7 @@ def import_cities(file_name='csv_data/worldcities.csv'):
     if file_name[0] != '/':
         file_name = current_dir + '/' + file_name
 
-    with open(file_name, 'rb') as csvfile:
+    with open(file_name, 'r') as csvfile:
         spamreader = csv.DictReader(csvfile)
         for idx, row in enumerate(spamreader):
 
@@ -72,13 +64,13 @@ def import_cities(file_name='csv_data/worldcities.csv'):
                 lang.id,
                 city.id
             )
-            name, created = name.get_or_create(
+            name.get_or_create(
                 CityName,
                 language_script_id=lang.id,
                 city_id=city.id
             )
 
-            print idx, row[' name']
+            print(idx, row[' name'])
 
 
 @manager.command
@@ -86,7 +78,7 @@ def import_airports(file_name='csv_data/airports.csv'):
     if file_name[0] != '/':
         file_name = current_dir + '/' + file_name
 
-    with open(file_name, 'rb') as csvfile:
+    with open(file_name, 'r') as csvfile:
         spamreader = csv.DictReader(csvfile)
         for idx, row in enumerate(spamreader):
             # create Airport.
@@ -105,7 +97,7 @@ def import_airports(file_name='csv_data/airports.csv'):
             )
             airport.save()
 
-            print idx, airport.name
+            print(idx, airport.name)
 
 
 @manager.command
@@ -113,19 +105,25 @@ def import_neo_airports(file_name='csv_data/airports.csv'):
     if file_name[0] != '/':
         file_name = current_dir + '/' + file_name
 
-    url = app.config['NEO4J_URL'] + "/db/data/index/node/"
+    url = "http://{}:7474/db/data/ext/SpatialPlugin/graphdb/addSimplePointLayer".format(
+        app.config['NEO4J_DATABASE_HOST']
+    )
     payload = {
-        "name": "geom",
-        "config": {
-            "provider": "spatial",
-            "geometry_type": "point",
-            "lat": "latitude",
-            "lon": "longitude"
-        }
+        "layer": "geom",
+        "lat": "latitude",
+        "lon": "longitude"
     }
-    requests.post(url, data=json.dumps(payload), headers=headers)
+    requests.post(
+        url,
+        data=json.dumps(payload),
+        headers=headers,
+        auth=(
+            app.config['NEO4J_DATABASE_USER'],
+            app.config['NEO4J_DATABASE_PASSWORD']
+        )
+    )
 
-    with open(file_name, 'rb') as csvfile:
+    with open(file_name, 'r') as csvfile:
         spamreader = csv.DictReader(csvfile)
         for idx, row in enumerate(spamreader):
             # create Airport.
@@ -144,18 +142,11 @@ def import_neo_airports(file_name='csv_data/airports.csv'):
             )
             airport.save()
 
-            # add node to geom index.
-            airport_url = app.config['NEO4J_URL'] + "/db/data/node/" + str(airport._id)
-            url = app.config['NEO4J_URL'] + "/db/data/index/node/geom"
-            payload = {'value': 'dummy', 'key': 'dummy', 'uri': airport_url}
-            requests.post(url, data=json.dumps(payload), headers=headers)
+            print(idx, airport.airport_name)
 
-            # add node to Spatial index.
-            # url = app.config['NEO4J_URL'] + "/db/data/ext/SpatialPlugin/graphdb/addNodeToLayer"
-            # payload = {'layer': 'geom', 'node': airport_url}
-            # requests.post(url, data=json.dumps(payload), headers=headers)
-
-            print idx, airport.airport_name
+        # Add node to geom index.
+        query = "match (t:NeoAirport) with t call spatial.addNode('geom',t) YIELD node return count(*)"
+        neomodel_db.cypher_query(query)
 
 
 @manager.command
@@ -163,7 +154,7 @@ def import_airlines(file_name='csv_data/airlines.csv'):
     if file_name[0] != '/':
         file_name = current_dir + '/' + file_name
 
-    with open(file_name, 'rb') as csvfile:
+    with open(file_name, 'r') as csvfile:
         spamreader = csv.DictReader(csvfile)
         for idx, row in enumerate(spamreader):
 
@@ -180,9 +171,9 @@ def import_airlines(file_name='csv_data/airlines.csv'):
             airline.save()
 
             try:
-                print idx, airline.name
+                print(idx, airline.name)
             except UnicodeEncodeError:
-                print idx
+                print(idx)
 
 
 @manager.command
@@ -190,23 +181,25 @@ def import_routes(file_name='csv_data/routes.csv'):
     if file_name[0] != '/':
         file_name = current_dir + '/' + file_name
 
-    with open(file_name, 'rb') as csvfile:
+    with open(file_name, 'r') as csvfile:
         spamreader = csv.DictReader(csvfile)
         for idx, row in enumerate(spamreader):
 
-            if not row['Source airport'] \
-                or not row['Destination airport'] \
-                or not row['Airline']:
-                    continue
+            if not row['Source airport'] or not row['Destination airport'] or not row['Airline']:
+                continue
 
-            airline = Airline.query.filter(Airline.iata == row['Airline']).first()
-            source_airport = Airport.query.filter(Airport.iata_faa == row['Source airport']).first()
-            destination_airport = Airport.query.filter(Airport.iata_faa == row['Destination airport']).first()
+            airline = Airline.query.filter(
+                Airline.iata == row['Airline']
+            ).first()
+            source_airport = Airport.query.filter(
+                Airport.iata_faa == row['Source airport']
+            ).first()
+            destination_airport = Airport.query.filter(
+                Airport.iata_faa == row['Destination airport']
+            ).first()
 
-            if not airline \
-                or not source_airport \
-                or not destination_airport:
-                    continue
+            if not airline or not source_airport or not destination_airport:
+                continue
 
             # create Route.
             route = Route(
@@ -218,7 +211,8 @@ def import_routes(file_name='csv_data/routes.csv'):
             )
             route.save()
 
-            print idx, route.id, source_airport.name, '-', destination_airport.name
+            print(idx, route.id, source_airport.name, '-',
+                  destination_airport.name)
 
 
 @manager.command
@@ -227,35 +221,43 @@ def import_neo_routes(file_name='csv_data/routes.csv'):
     if file_name[0] != '/':
         file_name = current_dir + '/' + file_name
 
-    with open(file_name, 'rb') as csvfile:
+    with open(file_name, 'r') as csvfile:
         spamreader = csv.DictReader(csvfile)
         for idx, row in enumerate(spamreader):
 
             if not row['Source airport'] \
                 or not row['Destination airport'] \
                     or not row['Airline']:
-                print 'incorrect row'
+                print('incorrect row')
                 continue
 
-            airline = Airline.query.filter(Airline.iata == row['Airline']).first()
+            airline = Airline.query.filter(
+                Airline.iata == row['Airline']
+            ).first()
             if not airline:
-                print 'no airline', row['Airline']
+                print('no airline', row['Airline'])
                 continue
 
             try:
-                source_airport = NeoAirport.nodes.get(iata_faa=row['Source airport'])
+                source_airport = NeoAirport.nodes.get(
+                    iata_faa=row['Source airport']
+                )
             except NeoAirport.DoesNotExist:
-                print 'no source_airport', row['Source airport']
+                print('no source_airport', row['Source airport'])
                 continue
 
             try:
-                destination_airport = NeoAirport.nodes.get(iata_faa=row['Destination airport'])
+                destination_airport = NeoAirport.nodes.get(
+                    iata_faa=row['Destination airport']
+                )
             except NeoAirport.DoesNotExist:
-                print 'no destination_airport', row['Destination airport']
+                print('no destination_airport', row['Destination airport'])
                 continue
 
             # create Route.
-            route = source_airport.available_destinations.connect(destination_airport)
+            route = source_airport.available_destinations.connect(
+                destination_airport
+            )
             route.airline = int(airline.id)
             route.distance = NeoAirport.get_distance(
                 source_airport.latitude,
@@ -268,8 +270,8 @@ def import_neo_routes(file_name='csv_data/routes.csv'):
 
             route.save()
 
-            print idx, route._id, \
-                source_airport.airport_name, '-', destination_airport.airport_name
+            print(idx, route.id, source_airport.airport_name, '-',
+                  destination_airport.airport_name)
 
 
 @manager.command
@@ -280,19 +282,18 @@ def import_all():
     import_neo_routes()
 
 
-
 @manager.command
 def create_cities_index():
-    ITEMS_PER_PAGE = 1000
+    items_per_page = 1000
 
     index_body = {
         "settings": {
-            "index" : {
+            "index": {
                 "analysis": {
                     "analyzer": {
                         "folding": {
                             "tokenizer": "standard",
-                            "filter":  [ "lowercase", "asciifolding" ]
+                            "filter":  ["lowercase", "asciifolding"]
                         }
                     }
                 }
@@ -312,10 +313,10 @@ def create_cities_index():
                         }
                     },
                     "location": {
-                        "type" : "geo_point"
+                        "type": "geo_point"
                     },
                     "population": {
-                        "type" : "integer"
+                        "type": "integer"
                     },
                     "data": {
                         "type": "nested"
@@ -327,18 +328,22 @@ def create_cities_index():
 
     try:
         es.indices.delete(index="main-index")
-    except Exception, e:
-        pass
+    except Exception as e:
+        print(e)
     es.indices.create(index='main-index', body=index_body)
 
     num_of_items = CityName.query.count()
-    num_of_pages = num_of_items // ITEMS_PER_PAGE + 1
+    num_of_pages = num_of_items // items_per_page + 1
     for page in range(num_of_pages):
         docs = []
-        for city_name in CityName.query.options(joinedload(CityName.city)).offset(page * ITEMS_PER_PAGE).limit(ITEMS_PER_PAGE).all():
+        for city_name in CityName.query.options(joinedload(CityName.city))\
+                .offset(page * items_per_page)\
+                .limit(items_per_page)\
+                .all():
             docs.append(city_name.elastic_serialize())
         helpers.bulk(es, docs)
-        print page, 'from', num_of_pages
+        print(page, 'from', num_of_pages)
+
 
 @manager.command
 def import_populations(file_name='csv_data/cities-populations.csv'):
@@ -346,22 +351,23 @@ def import_populations(file_name='csv_data/cities-populations.csv'):
     if file_name[0] != '/':
         file_name = current_dir + '/' + file_name
 
-    with open(file_name, 'rb') as csvfile:
+    with open(file_name, 'r') as csvfile:
         spamreader = csv.DictReader(csvfile)
         for idx, row in enumerate(spamreader):
             if row['Population']:
-                # (joinedload(City.city_names))
                 cities = City.query.options()\
                     .filter(City.latitude == float(row['Latitude']))\
                     .filter(City.longitude == float(row['Longitude']))\
                     .all()
 
                 for city in cities:
-                    if row['City'].lower() in [c.name.lower() for c in city.city_names]:
+                    city_names = [c.name.lower() for c in city.city_names]
+                    if row['City'].lower() in city_names:
                         city.population = int(row['Population'])
                         city.save()
 
-                        print idx, row['City'],  row['Country'], 'population', row['Population']
+                        print(idx, row['City'],  row['Country'], 'population',
+                              row['Population'])
 
 
 @manager.command
@@ -371,7 +377,10 @@ def import_flightstats_airports(file_name='csv_data/flightstats_airports.csv'):
         file_name = current_dir + '/' + file_name
 
     url = app.config['FLIGHTSTATS_URL'] + '/flex/airports/rest/v1/json/active'
-    params = {'appId': app.config['FLIGHTSTATS_APPID'], 'appKey': app.config['FLIGHTSTATS_APPKEY']}
+    params = {
+        'appId': app.config['FLIGHTSTATS_APPID'],
+        'appKey': app.config['FLIGHTSTATS_APPKEY']
+    }
     res = requests.get(url, params=params)
 
     if res.status_code == 200:
@@ -385,7 +394,7 @@ def import_flightstats_airports(file_name='csv_data/flightstats_airports.csv'):
 
             for row in json_data:
                 for key in row.keys():
-                    if not key in headers:
+                    if key not in headers:
                         headers.append(key)
 
             spamwriter.writerow(headers)
@@ -396,14 +405,11 @@ def import_flightstats_airports(file_name='csv_data/flightstats_airports.csv'):
                 for key in headers:
                     value = row.get(key, '')
 
-                    if isinstance(value, basestring):
-                        item_values.append(value.encode('utf-8'))
-                    else:
-                        item_values.append(value)
+                    item_values.append(value)
 
                 spamwriter.writerow(item_values)
 
-                print idx, row['name']
+                print(idx, row['name'])
 
             csvfile.close()
 
@@ -415,7 +421,10 @@ def import_flightstats_airlines(file_name='csv_data/flightstats_airlines.csv'):
         file_name = current_dir + '/' + file_name
 
     url = app.config['FLIGHTSTATS_URL'] + '/flex/airlines/rest/v1/json/active'
-    params = {'appId': app.config['FLIGHTSTATS_APPID'], 'appKey': app.config['FLIGHTSTATS_APPKEY']}
+    params = {
+        'appId': app.config['FLIGHTSTATS_APPID'],
+        'appKey': app.config['FLIGHTSTATS_APPKEY']
+    }
     res = requests.get(url, params=params)
 
     if res.status_code == 200:
@@ -439,15 +448,11 @@ def import_flightstats_airlines(file_name='csv_data/flightstats_airlines.csv'):
 
                 for key in headers:
                     value = row.get(key, '')
-
-                    if isinstance(value, basestring):
-                        item_values.append(value.encode('utf-8'))
-                    else:
-                        item_values.append(value)
+                    item_values.append(value)
 
                 spamwriter.writerow(item_values)
 
-                print idx, row['name']
+                print(idx, row['name'])
 
             csvfile.close()
 

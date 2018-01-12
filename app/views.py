@@ -1,12 +1,12 @@
-from flask import render_template, jsonify, request, abort
-from app import app, City, LanguageScript, CityName, Route, Airport, NeoAirport, NeoRoute
-import os, sys
+from flask import render_template, jsonify, request
+from app import app, City, CityName, NeoAirport, NeoRoute
+import os
 from sqlalchemy.orm import joinedload
 from sqlalchemy.sql.expression import nullslast
 from sqlalchemy import desc
 from extensions import cache, redis_store, engine, db, es
 from redis.exceptions import ConnectionError
-import cPickle as pickle
+import pickle
 import math
 
 BASE_TEMPLATES_DIR = os.path.dirname(os.path.abspath(__file__)) + '/templates'
@@ -52,6 +52,7 @@ def technologies():
 @app.route('/ajax/autocomplete/cities')
 def autocomplete_cities():
     """Autocomplete for cities."""
+    result = None
     query = request.args.get('query')
 
     redis_key = '|'.join(['autocomplete_cities', query])
@@ -67,48 +68,68 @@ def autocomplete_cities():
 
     # Try to find with Elasticsearch.
     try:
-        cities = es.search(index='main-index', from_=0, size=10, doc_type='CityName', body= {
-            "query": {
-                "bool": {
-                    "should": {
-                        "match_phrase_prefix": {
-                            "value.folded": {
-                                "query": query,
-                                "boost": 10
-                            }
-                        }
-                    },
-                    "must": {
-                        "match_phrase_prefix": {
-                            "value.folded": {
-                                "query": query,
-                                "fuzziness": 'AUTO'
+        cities = es.search(
+            index='main-index',
+            from_=0,
+            size=10,
+            doc_type='CityName',
+            body={
+                "query": {
+                    "bool": {
+                        "should": {
+                            "match_phrase_prefix": {
+                                "value.folded": {
+                                    "query": query,
+                                    "boost": 10
+                                }
                             }
                         },
+                        "must": {
+                            "match_phrase_prefix": {
+                                "value.folded": {
+                                    "query": query,
+                                    "fuzziness": 'AUTO'
+                                }
+                            },
+                        }
+                    }
+                },
+                "sort": {
+                    "population": {
+                        "order": 'desc'
                     }
                 }
-            },
-            "sort": {
-                "population": {
-                    "order": 'desc'
-                }
             }
-        })
-        result = jsonify(suggestions=[city['_source'] for city in cities['hits']['hits']])
+        )
+        result = jsonify(suggestions=[
+            city['_source']
+            for city in cities['hits']['hits']
+        ])
         elasticsearch_is_connected = True
-    except:
+    except Exception as e:
         elasticsearch_is_connected = False
 
     # Try to find with PostgreSQL (reconnect to db if got an error).
     if not elasticsearch_is_connected:
         try:
-            cities = CityName.query.options(joinedload(CityName.city)).filter(CityName.name.like(query + '%')).order_by(nullslast(desc('population'))).limit(10).all()
-        except:
+            cities = CityName.query.options(joinedload(CityName.city))\
+                .filter(CityName.name.like(query + '%'))\
+                .order_by(nullslast(desc('population')))\
+                .limit(10)\
+                .all()
+        except Exception as e:
             db.session.close()
             engine.connect()
-            cities = CityName.query.options(joinedload(CityName.city)).filter(CityName.name.like(query + '%')).order_by(nullslast(desc('population'))).limit(10).all()
+            cities = CityName.query.options(joinedload(CityName.city))\
+                .filter(CityName.name.like(query + '%'))\
+                .order_by(nullslast(desc('population')))\
+                .limit(10)\
+                .all()
 
-        result = jsonify(suggestions=[city.autocomplete_serialize() for city in cities])
+        result = jsonify(suggestions=[
+            city.autocomplete_serialize()
+            for city in cities
+        ])
 
     if redis_is_connected:
         redis_store.set(redis_key, pickle.dumps(result))
@@ -125,7 +146,9 @@ def airports():
     limit = int(request.args.get('limit')) or 1
     find_closest_city = request.args.get('find_closest_city') == 'true'
 
-    redis_key = '|'.join(['airports', str(lat), str(lng), str(limit), str(find_closest_city)])
+    redis_key = '|'.join(
+        ['airports', str(lat), str(lng), str(limit), str(find_closest_city)]
+    )
 
     try:
         result = redis_store.get(redis_key)
@@ -135,45 +158,49 @@ def airports():
     except ConnectionError:
         redis_is_connected = False
 
-    result = {}
-    result['airports'] = NeoAirport.get_closest_airports(lat, lng, limit)
+    result = {
+        'airports': NeoAirport.get_closest_airports(lat, lng, limit)
+    }
 
     if find_closest_city:
         # Try to find with Elasticsearch.
         try:
-            cities = es.search(index='main-index', from_=0, size=1, doc_type='CityName', body= {
-                "query": {
-                    "filtered" : {
-                        "query" : {
-                            "match_all" : {}
-                        },
-                        "filter" : {
-                            "geo_distance" : {
-                                "distance" : "500km",
-                                "location" : {
-                                    "lat" : lat,
-                                    "lon" : lng
+            cities = es.search(
+                index='main-index',
+                from_=0, size=1,
+                doc_type='CityName',
+                body={
+                    "query": {
+                        "filtered": {
+                            "query": {
+                                "match_all": {}
+                            },
+                            "filter": {
+                                "geo_distance": {
+                                    "distance": "500km",
+                                    "location": {
+                                        "lat": lat,
+                                        "lon": lng
+                                    }
                                 }
                             }
                         }
-                    }
-                },
-                "sort": {
-                    "_geo_distance": {
-                        "location": {
-                            "lat": lat,
-                            "lon": lng
-                        },
-                        "order": "asc",
-                        "unit": "km"
-                    }
-                },
-                "size": 1
-            })
+                    },
+                    "sort": {
+                        "_geo_distance": {
+                            "location": {
+                                "lat": lat,
+                                "lon": lng
+                            },
+                            "order": "asc",
+                            "unit": "km"
+                        }
+                    },
+                    "size": 1
+                }
+            )
             result['closest_city'] = cities['hits']['hits'][0]['_source']
-            elasticsearch_is_connected = True
-        except:
-            elasticsearch_is_connected = False
+        except Exception as e:
             result['closest_city'] = City.get_closest_cities(lat, lng, 1)[0]
 
     result = jsonify(result)
@@ -208,19 +235,24 @@ def routes():
 
     return result
 
-@cache.cached(timeout=300) # is it work for json?
+
+@cache.cached(timeout=300)  # is it work for json?
 @app.route('/ajax/get-cities')
 def get_cities():
-    # supported_languages = LanguageScript.query.with_entities(LanguageScript.language_script).all()
-    # print supported_languages
+    # supported_languages = LanguageScript.query\
+    #     .with_entities(LanguageScript.language_script).all()
+    # print(supported_languages)
     # lang = request.accept_languages.best_match(supported_languages)
     # print request.accept_languages
+    result = None
     ne_lng = float(request.args.get('ne_lng'))
     ne_lat = float(request.args.get('ne_lat'))
     sw_lng = float(request.args.get('sw_lng'))
     sw_lat = float(request.args.get('sw_lat'))
 
-    redis_key = '|'.join(['get_cities', str(ne_lng), str(ne_lat), str(sw_lng), str(sw_lat)])
+    redis_key = '|'.join(
+        ['get_cities', str(ne_lng), str(ne_lat), str(sw_lng), str(sw_lat)]
+    )
 
     # Try to find with Redis.
     try:
@@ -233,26 +265,33 @@ def get_cities():
 
     # Try to find with Elasticsearch.
     try:
-        cities = es.search(index='main-index', from_=0, size=10, doc_type='CityName', body= {
-            "query": {
-                "filtered": {
-                    "filter": {
-                        "geo_distance": {
-                            "distance": str(NeoAirport.get_distance(ne_lat, ne_lng, sw_lat, sw_lng) / 2 / math.sqrt(2)) + 'km',
-                            "location": {
-                                "lat": (ne_lat + sw_lat) / 2,
-                                "lon": (ne_lng + sw_lng) / 2
+        cities = es.search(
+            index='main-index',
+            from_=0, size=10,
+            doc_type='CityName',
+            body={
+                "query": {
+                    "filtered": {
+                        "filter": {
+                            "geo_distance": {
+                                "distance": str(NeoAirport.get_distance(
+                                    ne_lat, ne_lng, sw_lat, sw_lng
+                                ) / 2 / math.sqrt(2)) + 'km',
+                                "location": {
+                                    "lat": (ne_lat + sw_lat) / 2,
+                                    "lon": (ne_lng + sw_lng) / 2
+                                }
                             }
                         }
                     }
-                }
-            },
-            "sort": {
-                "population": {
-                    "order": 'desc'
+                },
+                "sort": {
+                    "population": {
+                        "order": 'desc'
+                    }
                 }
             }
-        })
+        )
 
         result = jsonify(json_list=[{
             'city_names': [city['_source']['value']],
@@ -262,7 +301,7 @@ def get_cities():
         } for city in cities['hits']['hits']])
 
         elasticsearch_is_connected = True
-    except:
+    except Exception as e:
         elasticsearch_is_connected = False
 
     # Try to find with PostgreSQL (reconnect to db if got an error).
@@ -273,8 +312,10 @@ def get_cities():
                         .filter(City.latitude < ne_lat)\
                         .filter(City.longitude > sw_lng)\
                         .filter(City.latitude > sw_lat)\
-                        .order_by(nullslast(desc(City.population))).limit(10).all()
-        except:
+                        .order_by(nullslast(desc(City.population)))\
+                        .limit(10)\
+                        .all()
+        except Exception as e:
             db.session.close()
             engine.connect()
             cities = City.query.options(joinedload(City.city_names))\
@@ -282,7 +323,9 @@ def get_cities():
                         .filter(City.latitude < ne_lat)\
                         .filter(City.longitude > sw_lng)\
                         .filter(City.latitude > sw_lat)\
-                        .order_by(nullslast(desc(City.population))).limit(10).all()
+                        .order_by(nullslast(desc(City.population)))\
+                        .limit(10)\
+                        .all()
 
         result = jsonify(json_list=[city.serialize() for city in cities])
 

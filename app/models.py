@@ -1,12 +1,12 @@
 from extensions import db, engine, redis_store
 from sqlalchemy.sql import text
 from sqlalchemy.orm import relationship, foreign, remote
-import cPickle as pickle
+import pickle
 import math
 import time
 from neomodel import (StructuredNode, StructuredRel, StringProperty,
                       IntegerProperty, FloatProperty, BooleanProperty,
-                      RelationshipFrom, RelationshipTo)
+                      RelationshipTo)
 from neomodel import db as neomodel_db
 from redis.exceptions import ConnectionError
 
@@ -18,7 +18,7 @@ def _deg2rad(deg):
 
 class PointMixin(object):
     def __repr__(self):
-        return unicode(self.__dict__)
+        return str(self.__dict__)
 
     @staticmethod
     def get_distance(lat1, lon1, lat2, lon2):
@@ -37,7 +37,7 @@ class PointMixin(object):
 
 class ModelMixin(object):
     def __repr__(self):
-        return unicode(self.__dict__)
+        return str(self.__dict__)
 
     def save(self):
         """save."""
@@ -88,11 +88,12 @@ class NeoRoute(StructuredRel):
         result = {}
 
         for raw_item in raw_data:
-            item = {}
-            item['nodes'] = [node.properties for node in raw_item.p.nodes]
-            item['total_distance'] = raw_item.totalDistance
+            item = {
+                'nodes': [node.properties for node in raw_item[0].nodes],
+                'total_distance': raw_item[1]
+            }
 
-            result.setdefault(len(raw_item.p.nodes) - 2, []).append(item)
+            result.setdefault(len(raw_item[0].nodes) - 2, []).append(item)
 
         return result
 
@@ -110,29 +111,33 @@ class NeoAirport(StructuredNode, PointMixin):
     dst = StringProperty()
     tz_database_time_zone = StringProperty()
 
-    available_destinations = RelationshipTo('NeoAirport', 'AVAILABLE_DESTINATION', model=NeoRoute)
+    available_destinations = RelationshipTo(
+        'NeoAirport', 'AVAILABLE_DESTINATION', model=NeoRoute
+    )
 
     def __repr__(self):
         return '<NeoAirport %r>' % self.airport_name
 
     def get_connections(self):
-        results, metadata = self.cypher("START a=node({self}) MATCH a<-[:CONNECT]-(b) RETURN b")
+        results, metadata = self.cypher(
+            "START a=node({self}) MATCH a<-[:CONNECT]-(b) RETURN b"
+        )
         return [self.__class__.inflate(row[0]) for row in results]
 
     @staticmethod
     def get_closest_airports(lat, lng, limit=1, distance=500, offset=0):
         """get closest airports by coordinates."""
-        query = """START n=node:geom('withinDistance:[{lat}, {lng}, {distance}]')
-                   MATCH n-[r:AVAILABLE_DESTINATION]->()
-                   RETURN DISTINCT n
+        query = """CALL spatial.withinDistance('geom',{{latitude: {lat},longitude: {lng}}}, {distance}) yield node, distance
+                   RETURN DISTINCT node, distance
                    SKIP {offset} LIMIT {limit}"""
 
-        query_data = {'lat': lat,
-                      'lng': lng,
-                      'distance': float(distance),
-                      'offset': offset,
-                      'limit': limit
-                      }
+        query_data = {
+            'lat': lat,
+            'lng': lng,
+            'distance': float(distance),
+            'offset': offset,
+            'limit': limit
+        }
 
         query = query.format(**query_data)
         raw_data, metadata = neomodel_db.cypher_query(query)
@@ -140,26 +145,13 @@ class NeoAirport(StructuredNode, PointMixin):
         result = []
 
         for raw_item in raw_data:
-            item = raw_item.n.properties
-            item['id'] = raw_item.n._id
-            item['distance'] = NeoAirport.get_distance(
-                item['latitude'], item['longitude'], lat, lng
-            )
+            item = raw_item[0].properties
+            item['id'] = raw_item[0].id
+            item['distance'] = raw_item[1]
 
             result.append(item)
 
         return result
-
-
-class ModelMixin(object):
-    def __repr__(self):
-        return unicode(self.__dict__)
-
-    def save(self):
-        """save."""
-        db.session.add(self)
-        db.session.commit()
-        return self
 
     def get_or_create(self, model, **kwargs):
         """get or create."""
@@ -188,7 +180,9 @@ class City(db.Model, ModelMixin):
     def __repr__(self):
         return '<City %r>' % self.id
 
-    def __init__(self, gns_ufi, latitude, longitude, country_code='US', subdivision_code=51, gns_fd='PPL', language_code='en', population=0):
+    def __init__(self, gns_ufi, latitude, longitude, country_code='US',
+                 subdivision_code=51, gns_fd='PPL', language_code='en',
+                 population=0):
         self.gns_ufi = gns_ufi
         self.latitude = latitude
         self.longitude = longitude
@@ -202,7 +196,9 @@ class City(db.Model, ModelMixin):
     def get_closest_cities(lat, lng, limit=1, offset=0):
         """get closest cities by coordinates."""
 
-        redis_key = '|'.join(['get_closest_cities', str(lat), str(lng), str(limit), str(offset)])
+        redis_key = '|'.join(
+            ['get_closest_cities', str(lat), str(lng), str(limit), str(offset)]
+        )
 
         try:
             result = redis_store.get(redis_key)
@@ -227,7 +223,8 @@ class City(db.Model, ModelMixin):
             "ORDER BY distance "
             "LIMIT :limit OFFSET :offset")
 
-        raw_data = conn.execute(s, latitude=lat, longitude=lng, limit=limit, offset=offset).fetchall()
+        raw_data = conn.execute(s, latitude=lat, longitude=lng, limit=limit,
+                                offset=offset).fetchall()
 
         for raw_item in raw_data:
             item = {
@@ -244,13 +241,13 @@ class City(db.Model, ModelMixin):
             result.append(item)
 
         conn.close()
-        if  redis_is_connected:
+        if redis_is_connected:
             redis_store.set(redis_key, pickle.dumps(result))
 
         return result
 
     def serialize(self):
-        """serialize."""
+        """Serialize."""
         result = {
             'id': self.id,
             'gns_ufi': self.gns_ufi,
@@ -271,7 +268,10 @@ class LanguageScript(db.Model, ModelMixin):
     id = db.Column(db.Integer, primary_key=True)
     language_script = db.Column(db.String(32), unique=True)
 
-    city_names = db.relationship('CityName', backref=db.backref('Languagescripts_city_names'))
+    city_names = db.relationship(
+        'CityName',
+        backref=db.backref('Languagescripts_city_names')
+    )
 
     def __repr__(self):
         return '<Languagescript %r>' % self.language_script
@@ -283,7 +283,10 @@ class LanguageScript(db.Model, ModelMixin):
 class CityName(db.Model, ModelMixin):
     __tablename__ = 'cityname'
     name = db.Column(db.String(128))
-    language_script_id = db.Column(db.Integer, db.ForeignKey('languagescript.id'), primary_key=True)
+    language_script_id = db.Column(
+        db.Integer,
+        db.ForeignKey('languagescript.id'),
+        primary_key=True)
     city_id = db.Column(db.Integer, db.ForeignKey('city.id'), primary_key=True)
 
     city = db.relationship('City', backref=db.backref('city'))
@@ -297,7 +300,7 @@ class CityName(db.Model, ModelMixin):
         self.city_id = city_id
 
     def serialize(self):
-        """serialize."""
+        """Serialize."""
         result = {
             'name': self.name,
             'city_id': self.city_id,
@@ -305,7 +308,7 @@ class CityName(db.Model, ModelMixin):
         return result
 
     def autocomplete_serialize(self):
-        """serialize for autocomplete."""
+        """Serialize for autocomplete."""
         return {
             'value': self.name,
             'data': {
@@ -320,8 +323,8 @@ class CityName(db.Model, ModelMixin):
         """serialize for elastic."""
         serialize_dict = self.autocomplete_serialize()
         serialize_dict['location'] = {
-            "lat" : self.city.latitude,
-            "lon" : self.city.longitude
+            "lat": self.city.latitude,
+            "lon": self.city.longitude
         }
         serialize_dict['population'] = getattr(self.city, 'population', 0)
 
@@ -348,13 +351,20 @@ class Airport(db.Model, ModelMixin):
     dst = db.Column(db.String(1))
     tz_database_time_zone = db.Column(db.String(64))
 
-    routes_in = db.relationship('Route', backref=db.backref('to_airport'), foreign_keys='Route.destination_airport', lazy='joined')
-    routes_out = db.relationship('Route', backref=db.backref('from_airport'), foreign_keys='Route.source_airport', lazy='joined')
+    routes_in = db.relationship('Route',
+                                backref=db.backref('to_airport'),
+                                foreign_keys='Route.destination_airport',
+                                lazy='joined')
+    routes_out = db.relationship('Route',
+                                 backref=db.backref('from_airport'),
+                                 foreign_keys='Route.source_airport',
+                                 lazy='joined')
 
     def __repr__(self):
         return '<Airport %r>' % self.name
 
-    def __init__(self, name, city, country, iata_faa, icao, latitude, longitude, altitude, timezone, dst, tz_database_time_zone):
+    def __init__(self, name, city, country, iata_faa, icao, latitude,
+                 longitude, altitude, timezone, dst, tz_database_time_zone):
         self.name = name
         self.city = city
         self.country = country
@@ -368,7 +378,7 @@ class Airport(db.Model, ModelMixin):
         self.tz_database_time_zone = tz_database_time_zone
 
     def serialize(self):
-        """serialize."""
+        """Serialize."""
         result = {
             'id': self.id,
             'name': self.name,
@@ -389,7 +399,15 @@ class Airport(db.Model, ModelMixin):
     def get_closest_airports(lat, lng, limit=1, offset=0):
         """get closest airports by coordinates."""
 
-        redis_key = '|'.join(['get_closest_airports', str(lat), str(lng), str(limit), str(offset)])
+        redis_key = '|'.join(
+            [
+                'get_closest_airports',
+                str(lat),
+                str(lng),
+                str(limit),
+                str(offset)
+            ]
+        )
         result = redis_store.get(redis_key)
 
         if result:
@@ -410,7 +428,8 @@ class Airport(db.Model, ModelMixin):
                 "ORDER BY distance "
                 "LIMIT :limit OFFSET :offset")
 
-        raw_data = conn.execute(s, latitude=lat, longitude=lng, limit=limit, offset=offset).fetchall()
+        raw_data = conn.execute(s, latitude=lat, longitude=lng, limit=limit,
+                                offset=offset).fetchall()
 
         for raw_item in raw_data:
             item = {
@@ -450,7 +469,8 @@ class Airline(db.Model, ModelMixin):
     def __repr__(self):
         return '<Airline %r>' % self.name
 
-    def __init__(self, name, alias, iata, icao, callsign, country, active=False):
+    def __init__(self, name, alias, iata, icao, callsign, country,
+                 active=False):
         self.name = name
         self.alias = alias
         self.iata = iata
@@ -460,7 +480,7 @@ class Airline(db.Model, ModelMixin):
         self.active = active
 
     def serialize(self):
-        """serialize."""
+        """Serialize."""
         result = {
             'id': self.id,
             'name': self.name,
@@ -483,15 +503,16 @@ class Route(db.Model, ModelMixin):
     codeshare = db.Column(db.Boolean, default=False)
     equipment = db.Column(db.String(48))
 
-    next_routes = relationship("Route",
-                                primaryjoin=
-                                    remote(foreign(source_airport)) == destination_airport
+    next_routes = relationship(
+        "Route",
+        primaryjoin=remote(foreign(source_airport)) == destination_airport
     )
 
     def __repr__(self):
         return '<Route %r>' % self.id
 
-    def __init__(self, airline, source_airport, destination_airport, codeshare, equipment):
+    def __init__(self, airline, source_airport, destination_airport, codeshare,
+                 equipment):
         self.airline = airline
         self.source_airport = source_airport
         self.destination_airport = destination_airport
@@ -499,7 +520,7 @@ class Route(db.Model, ModelMixin):
         self.equipment = equipment
 
     def serialize(self):
-        """serialize."""
+        """Serialize."""
         result = {
             'id': self.id,
             'airline': self.airline,
@@ -513,9 +534,14 @@ class Route(db.Model, ModelMixin):
         return result
 
     def serialize_with_next_routes(self, destination):
-        """serialize."""
+        """Serialize."""
         result = self.serialize()
-        result['next_routes'] = [route.serialize() for route in self.next_routes if route.destination_airport == destination]
+        result['next_routes'] = [
+            route.serialize()
+            for route in self.next_routes
+            if route.destination_airport == destination
+        ]
         return result
+
 
 db.create_all()

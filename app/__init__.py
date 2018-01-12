@@ -1,11 +1,9 @@
 from flask import Flask, url_for
 from flask_debugtoolbar import DebugToolbarExtension
-# from extensions import db
-from flask_sqlalchemy import SQLAlchemy
-from models import City, LanguageScript, CityName, Airport, Airline, Route, NeoAirport, NeoRoute
+from .models import (City, LanguageScript, CityName, Airport, Airline,
+                     Route, NeoAirport, NeoRoute)
 
 app = Flask(__name__)
-# app.config.from_pyfile('config.DefaultConfig', silent=True)
 app.config.from_object('app.config.DefaultConfig')
 
 toolbar = DebugToolbarExtension(app)

@@ -28,6 +28,7 @@ h1.navbar-brand {
 #map-info {
     bottom: 10px;
     left: 0;
+    pointer-events: none;
     position: absolute;
     right: 0;
     text-align: center;
