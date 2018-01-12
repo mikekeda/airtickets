@@ -1,5 +1,6 @@
-import os, sys
+import os
 BASE_TEMPLATES_DIR = os.path.dirname(os.path.abspath(__file__)) + '/templates'
+
 
 @app.context_processor
 def select_parent_template():
