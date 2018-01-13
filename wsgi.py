@@ -2,7 +2,5 @@ from app import app
 import bjoern
 
 if __name__ == "__main__":
-    try:
-        bjoern.run(app, 'unix:/uwsgi/airtickets.sock')
-    except KeyboardInterrupt:
-        pass
+    sock = bjoern.bind_and_listen('unix:/uwsgi/airtickets.sock')
+    bjoern.server_run(sock, app)
