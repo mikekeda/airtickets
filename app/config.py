@@ -3,7 +3,7 @@ import requests
 
 from neomodel import config
 
-SITE_ENV_PREFIX = 'CHAT'
+SITE_ENV_PREFIX = 'AIRTICKETS'
 
 
 def get_env_var(name, default=''):
