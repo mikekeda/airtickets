@@ -13,7 +13,7 @@ from extensions import db, engine, redis_store
 
 
 def _deg2rad(deg):
-    """helper function."""
+    """Helper function."""
     return deg * (math.pi / 180)
 
 
@@ -23,7 +23,7 @@ class PointMixin(object):
 
     @staticmethod
     def get_distance(lat1, lon1, lat2, lon2):
-        """get distance between two points."""
+        """Get distance between two points."""
         radius = 6371  # Radius of the earth in km
         d_lat = _deg2rad(lat2 - lat1)
         d_lon = _deg2rad(lon2 - lon1)
@@ -216,8 +216,9 @@ class City(db.Model, ModelMixin):
         s = text(
             "SELECT *, "
             "("
-            "3959 * acos( cos( radians(:latitude) ) * cos( radians( latitude ) ) * "
-            "cos( radians( longitude ) - radians(:longitude) ) + sin( radians(:latitude) ) * "
+            "3959 * acos( cos( radians(:latitude) ) * "
+            "cos( radians( latitude ) ) * cos( radians( longitude ) - "
+            "radians(:longitude) ) + sin( radians(:latitude) ) * "
             "sin( radians( latitude ) ) )"
             ") AS distance "
             "FROM city "
@@ -422,12 +423,14 @@ class Airport(db.Model, ModelMixin):
         s = text(
             "SELECT *, "
             "("
-            "3959 * acos( cos( radians(:latitude) ) * cos( radians( latitude ) ) * "
-            "cos( radians( longitude ) - radians(:longitude) ) + sin( radians(:latitude) ) * "
+            "3959 * acos( cos( radians(:latitude) ) * "
+            "cos( radians( latitude ) ) * cos( radians( longitude ) - "
+            "radians(:longitude) ) + sin( radians(:latitude) ) * "
             "sin( radians( latitude ) ) )"
             ") AS distance "
             "FROM airport "
-            "WHERE id IN (SELECT source_airport FROM route) OR id IN (SELECT destination_airport FROM route) "
+            "WHERE id IN (SELECT source_airport FROM route) "
+            "OR id IN (SELECT destination_airport FROM route) "
             "ORDER BY distance "
             "LIMIT :limit OFFSET :offset"
         )

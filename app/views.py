@@ -13,8 +13,6 @@ from extensions import cache, redis_store, engine, db, es
 
 BASE_TEMPLATES_DIR = os.path.dirname(os.path.abspath(__file__)) + '/templates'
 
-# Context processors.
-
 
 @app.context_processor
 def select_parent_template():
