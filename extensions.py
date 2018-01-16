@@ -5,9 +5,9 @@
 from flask import Flask
 from sqlalchemy import create_engine
 from flask_sqlalchemy import SQLAlchemy
-from flask.ext.cache import Cache
-from flask.ext.redis import FlaskRedis
-from flask.ext.elasticsearch import FlaskElasticsearch
+from flask_cache import Cache
+from flask_redis import FlaskRedis
+from flask_elasticsearch import FlaskElasticsearch
 
 app = Flask(__name__)
 
