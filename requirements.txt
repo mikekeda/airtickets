@@ -1,9 +1,11 @@
 alembic==0.9.7
 astroid==1.6.0
+attrs==17.4.0
 blinker==1.4
 certifi==2017.11.5
 chardet==3.0.4
 click==6.7
+coverage==4.4.2
 elasticsearch==6.1.1
 Flask==0.12.2
 Flask-Cache==0.13.1
@@ -13,6 +15,7 @@ Flask-Migrate==2.1.1
 Flask-Redis==0.3.0
 Flask-Script==2.0.6
 Flask-SQLAlchemy==2.3.2
+Flask-Testing==0.7.1
 Frozen-Flask==0.15
 gunicorn==19.7.1
 idna==2.6
@@ -26,12 +29,16 @@ mccabe==0.6.1
 neo4j-driver==1.5.3
 neomodel==3.2.5
 pep8==1.7.1
+pluggy==0.6.0
 psycopg2==2.7.3.2
+py==1.5.2
 py2neo==3.1.2
 pycodestyle==2.3.1
 pylint==1.8.1
 pylint-flask==0.5
 pylint-plugin-utils==0.2.6
+pytest==3.3.2
+pytest-cov==2.5.1
 python-dateutil==2.6.1
 python-editor==1.0.3
 pytz==2017.3

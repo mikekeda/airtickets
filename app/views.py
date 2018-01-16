@@ -21,12 +21,6 @@ def select_parent_template():
     return {'parent_template': parent_template}
 
 
-@app.context_processor
-def openshift():
-    """Check if it's openshift."""
-    return {'OPENSHIFT': ('OPENSHIFT_APP_NAME' in os.environ)}
-
-
 # Routing.
 
 @app.errorhandler(404)
@@ -62,7 +56,7 @@ def autocomplete_cities():
         result = redis_store.get(redis_key)
         redis_is_connected = True
         if result:
-            return pickle.loads(result)
+            return jsonify(suggestions=pickle.loads(result))
     except ConnectionError:
         redis_is_connected = False
 
@@ -101,10 +95,10 @@ def autocomplete_cities():
                 }
             }
         )
-        result = jsonify(suggestions=[
+        result = [
             city['_source']
             for city in cities['hits']['hits']
-        ])
+        ]
         elasticsearch_is_connected = True
     except Exception as e:
         elasticsearch_is_connected = False
@@ -126,15 +120,15 @@ def autocomplete_cities():
                 .limit(10)\
                 .all()
 
-        result = jsonify(suggestions=[
+        result = [
             city.autocomplete_serialize()
             for city in cities
-        ])
+        ]
 
     if redis_is_connected:
         redis_store.set(redis_key, pickle.dumps(result))
 
-    return result
+    return jsonify(suggestions=result)
 
 
 @cache.cached(timeout=12 * 60 * 60)
