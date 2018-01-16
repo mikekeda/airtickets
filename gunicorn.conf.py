@@ -1,4 +1,7 @@
-"""Gunicorn config."""
+# -*- coding: utf-8 -*-
+"""
+    Gunicorn config..
+"""
 # TODO: Doesn't work, need to check why.
 # bind = 'unix:/uwsgi/airtickets.sock'
 bind = '127.0.0.1:8001'

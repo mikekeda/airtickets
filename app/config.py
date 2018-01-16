@@ -52,8 +52,8 @@ class DefaultConfig(object):
 
     # Determines the destination of the build.
     # Only usefull if you're using Frozen-Flask.
-    FREEZER_DESTINATION = os.path.dirname(os.path.abspath(__file__)) \
-                          + '/../build'
+    FREEZER_DESTINATION = os.path.dirname(os.path.abspath(__file__)) + \
+        '/../build'
 
     # the toolbar is only enabled in debug mode:
     DEBUG = False

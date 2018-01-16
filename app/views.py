@@ -1,13 +1,15 @@
-from flask import render_template, jsonify, request
-from app import app, City, CityName, NeoAirport, NeoRoute
 import os
+import pickle
+import math
+
+from flask import render_template, jsonify, request
 from sqlalchemy.orm import joinedload
 from sqlalchemy.sql.expression import nullslast
 from sqlalchemy import desc
-from extensions import cache, redis_store, engine, db, es
 from redis.exceptions import ConnectionError
-import pickle
-import math
+
+from app import app, City, CityName, NeoAirport, NeoRoute
+from extensions import cache, redis_store, engine, db, es
 
 BASE_TEMPLATES_DIR = os.path.dirname(os.path.abspath(__file__)) + '/templates'
 
@@ -308,24 +310,24 @@ def get_cities():
     if not elasticsearch_is_connected:
         try:
             cities = City.query.options(joinedload(City.city_names))\
-                        .filter(City.longitude < ne_lng)\
-                        .filter(City.latitude < ne_lat)\
-                        .filter(City.longitude > sw_lng)\
-                        .filter(City.latitude > sw_lat)\
-                        .order_by(nullslast(desc(City.population)))\
-                        .limit(10)\
-                        .all()
+                         .filter(City.longitude < ne_lng)\
+                         .filter(City.latitude < ne_lat)\
+                         .filter(City.longitude > sw_lng)\
+                         .filter(City.latitude > sw_lat)\
+                         .order_by(nullslast(desc(City.population)))\
+                         .limit(10)\
+                         .all()
         except Exception as e:
             db.session.close()
             engine.connect()
             cities = City.query.options(joinedload(City.city_names))\
-                        .filter(City.longitude < ne_lng)\
-                        .filter(City.latitude < ne_lat)\
-                        .filter(City.longitude > sw_lng)\
-                        .filter(City.latitude > sw_lat)\
-                        .order_by(nullslast(desc(City.population)))\
-                        .limit(10)\
-                        .all()
+                         .filter(City.longitude < ne_lng)\
+                         .filter(City.latitude < ne_lat)\
+                         .filter(City.longitude > sw_lng)\
+                         .filter(City.latitude > sw_lat)\
+                         .order_by(nullslast(desc(City.population)))\
+                         .limit(10)\
+                         .all()
 
         result = jsonify(json_list=[city.serialize() for city in cities])
 

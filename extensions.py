@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-    app.extensions
+    App.extensions.
 """
 from flask import Flask
 from sqlalchemy import create_engine
@@ -8,7 +8,6 @@ from flask_sqlalchemy import SQLAlchemy
 from flask.ext.cache import Cache
 from flask.ext.redis import FlaskRedis
 from flask.ext.elasticsearch import FlaskElasticsearch
-# from flask_migrate import Migrate
 
 app = Flask(__name__)
 
