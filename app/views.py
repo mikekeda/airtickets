@@ -216,16 +216,16 @@ def routes():
         result = redis_store.get(redis_key)
         redis_is_connected = True
         if result:
-            return pickle.loads(result)
+            return jsonify(routes=pickle.loads(result))
     except RedisConnectionError:
         redis_is_connected = False
 
-    result = jsonify(routes=NeoRoute.get_path(from_airport, to_airport))
+    result = NeoRoute.get_path(from_airport, to_airport)
 
     if redis_is_connected:
         redis_store.set(redis_key, pickle.dumps(result))
 
-    return result
+    return jsonify(routes=result)
 
 
 @cache.cached(timeout=300)  # is it work for json?
