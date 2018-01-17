@@ -6,7 +6,7 @@ from flask import render_template, jsonify, request
 from sqlalchemy.orm import joinedload
 from sqlalchemy.sql.expression import nullslast
 from sqlalchemy import desc
-from redis.exceptions import ConnectionError
+from redis.exceptions import ConnectionError as RedisConnectionError
 
 from app import app, City, CityName, NeoAirport, NeoRoute
 from extensions import cache, redis_store, engine, db, es
@@ -57,7 +57,7 @@ def autocomplete_cities():
         redis_is_connected = True
         if result:
             return jsonify(suggestions=pickle.loads(result))
-    except ConnectionError:
+    except RedisConnectionError:
         redis_is_connected = False
 
     # Try to find with Elasticsearch.
@@ -149,7 +149,7 @@ def airports():
         redis_is_connected = True
         if result:
             return pickle.loads(result)
-    except ConnectionError:
+    except RedisConnectionError:
         redis_is_connected = False
 
     result = {
@@ -219,7 +219,7 @@ def routes():
         redis_is_connected = True
         if result:
             return pickle.loads(result)
-    except ConnectionError:
+    except RedisConnectionError:
         redis_is_connected = False
 
     result = jsonify(routes=NeoRoute.get_path(from_airport, to_airport))
@@ -254,7 +254,7 @@ def get_cities():
         redis_is_connected = True
         if result:
             return pickle.loads(result)
-    except ConnectionError:
+    except RedisConnectionError:
         redis_is_connected = False
 
     # Try to find with Elasticsearch.

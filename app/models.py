@@ -8,7 +8,7 @@ from neomodel import (StructuredNode, StructuredRel, StringProperty,
                       IntegerProperty, FloatProperty, BooleanProperty,
                       RelationshipTo)
 from neomodel import db as neomodel_db
-from redis.exceptions import ConnectionError
+from redis.exceptions import ConnectionError as RedisConnectionError
 from extensions import db, engine, redis_store
 
 
@@ -217,7 +217,7 @@ class City(db.Model, ModelMixin):
             redis_is_connected = True
             if result:
                 return pickle.loads(result)
-        except ConnectionError:
+        except RedisConnectionError:
             redis_is_connected = False
 
         result = []
