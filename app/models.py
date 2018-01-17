@@ -71,11 +71,16 @@ class NeoRoute(StructuredRel):
     def get_path(from_airport, to_airport):
         """Get path from source_airport to destination_airport."""
 
-        query = """MATCH p=(startNode:NeoAirport)-[rels:{rel_type}*1..3]->(endNode:NeoAirport)
-                   WHERE id(startNode) = {from_airport} AND id(endNode) = {to_airport}
-                   RETURN p AS p, reduce(distance=0, r in rels | distance + r.distance) AS totalDistance
-                   ORDER BY totalDistance
-                   LIMIT 20"""
+        query = (
+            "MATCH p=(startNode:NeoAirport)-[rels:{rel_type}*1..3]->"
+            "(endNode:NeoAirport) "
+            "WHERE id(startNode) = {from_airport} "
+            "AND id(endNode) = {to_airport} "
+            "RETURN p AS p, reduce(distance=0, r in rels | "
+            "distance + r.distance) AS totalDistance "
+            "ORDER BY totalDistance "
+            "LIMIT 20"
+        )
 
         query_data = {
             'from_airport': from_airport,
@@ -120,6 +125,10 @@ class NeoAirport(StructuredNode, PointMixin):
     def __repr__(self):
         return '<NeoAirport {}>'.format(self.airport_name)
 
+    @classmethod
+    def category(cls):
+        return "{}.nodes attribute".format(cls.__name__)
+
     def get_connections(self):
         results, _ = self.cypher(
             "START a=node({self}) MATCH a<-[:CONNECT]-(b) RETURN b"
@@ -129,9 +138,10 @@ class NeoAirport(StructuredNode, PointMixin):
     @staticmethod
     def get_closest_airports(lat, lng, limit=1, distance=500, offset=0):
         """Get closest airports by coordinates."""
-        query = """CALL spatial.withinDistance('geom',{{latitude: {lat},longitude: {lng}}}, {distance}) yield node, distance
-                   RETURN DISTINCT node, distance
-                   SKIP {offset} LIMIT {limit}"""
+        query = ("CALL spatial.withinDistance('geom',{{latitude: {lat},"
+                 "longitude: {lng}}}, {distance}) yield node, distance "
+                 "RETURN DISTINCT node, distance "
+                 "LIMIT {limit}")
 
         query_data = {
             'lat': lat,
