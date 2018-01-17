@@ -148,7 +148,7 @@ def airports():
         result = redis_store.get(redis_key)
         redis_is_connected = True
         if result:
-            return pickle.loads(result)
+            return jsonify(pickle.loads(result))
     except RedisConnectionError:
         redis_is_connected = False
 
@@ -197,12 +197,10 @@ def airports():
         except Exception as e:
             result['closest_city'] = City.get_closest_cities(lat, lng, 1)[0]
 
-    result = jsonify(result)
-
     if redis_is_connected:
         redis_store.set(redis_key, pickle.dumps(result))
 
-    return result
+    return jsonify(result)
 
 
 @cache.cached(timeout=12 * 60 * 60)
@@ -253,7 +251,7 @@ def get_cities():
         result = redis_store.get(redis_key)
         redis_is_connected = True
         if result:
-            return pickle.loads(result)
+            return jsonify(json_list=pickle.loads(result))
     except RedisConnectionError:
         redis_is_connected = False
 
@@ -321,9 +319,9 @@ def get_cities():
                          .limit(10)\
                          .all()
 
-        result = jsonify(json_list=[city.serialize() for city in cities])
+        result = [city.serialize() for city in cities]
 
     if redis_is_connected:
         redis_store.set(redis_key, pickle.dumps(result))
 
-    return result
+    return jsonify(json_list=result)

@@ -1,8 +1,9 @@
 from flask import Flask, url_for
 from flask_debugtoolbar import DebugToolbarExtension
+
+from extensions import db
 from .models import (City, LanguageScript, CityName, Airport, Airline,
                      Route, NeoAirport, NeoRoute)
-from extensions import db
 
 app = Flask(__name__)
 app.config.from_object('app.config.DefaultConfig')
