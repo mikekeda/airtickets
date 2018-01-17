@@ -50,11 +50,6 @@ class DefaultConfig(object):
     config.ENCRYPTED_CONNECTION = False
     REDIS_URL = "redis://:@localhost:6379/5"
 
-    # Determines the destination of the build.
-    # Only usefull if you're using Frozen-Flask.
-    FREEZER_DESTINATION = os.path.dirname(os.path.abspath(__file__)) + \
-        '/../build'
-
     # the toolbar is only enabled in debug mode:
     DEBUG = False
 

@@ -165,15 +165,6 @@ class NeoAirport(StructuredNode, PointMixin):
 
         return result
 
-    def get_or_create(self, model, **kwargs):
-        """Get or create."""
-        instance = db.session.query(model).filter_by(**kwargs).first()
-        if instance:
-            return instance, False
-
-        instance = self.save()
-        return instance, True
-
 
 class City(db.Model, ModelMixin):
     __tablename__ = 'city'
