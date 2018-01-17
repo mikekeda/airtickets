@@ -15,6 +15,7 @@
     <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
     <link rel="stylesheet" type="text/css" href="{{ static('css/main.css') }}">
     <style type="text/css"></style>
+    {% block css %}{% endblock css %}
 </head>
 <body>
     <!--[if lt IE 7]>
@@ -43,8 +44,9 @@
       <footer class="footer navbar-default navbar-bottom">
         <div class="container-fluid">
           <p class="text-muted">
-            <span>Created by: <a href="mailto:mriynuk@gmail.com">Voron</a></span>
+            <span>Site owner: <a href="https://www.linkedin.com/in/mykhailokeda/">Mykhailo Keda</a></span>
             <span class="right">Powered by: <a href="http://flask.pocoo.org/">Flask</a></span>
+            <span class="right">Link to the repository: <a href="https://bitbucket.org/voron-raven/airtickets">Airtickets</a></span>
           </p>
         </div>
       </footer>

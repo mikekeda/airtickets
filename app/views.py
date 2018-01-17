@@ -25,7 +25,7 @@ def select_parent_template():
 
 @app.errorhandler(404)
 def page_not_found(error):
-    return render_template('page_not_found.html'), 404
+    return render_template('404.html'), 404
 
 
 @app.route('/ajax/')

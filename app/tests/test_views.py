@@ -36,3 +36,8 @@ class TestOptionMarker(BaseTestCase):
             '/ajax/get-cities?ne_lng=25.0&ne_lat=51.0&sw_lng=24.0&sw_lat=50.0'
         )
         self.assert200(response)
+
+    def test_page_not_found_page(self):
+        response = self.client.get('/not-exists')
+        self.assert404(response)
+        self.assert_template_used('404.html')
