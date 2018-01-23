@@ -4,7 +4,7 @@
 from app.tests import BaseTestCase
 
 
-class TestOptionMarker(BaseTestCase):
+class AirticketsViewTest(BaseTestCase):
     def test_home_page(self):
         response = self.client.get('/')
         self.assert200(response)
