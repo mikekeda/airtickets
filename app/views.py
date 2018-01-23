@@ -2,6 +2,7 @@ import os
 import pickle
 import math
 
+from elasticsearch.exceptions import ConnectionError as ElasticConnectionError
 from flask import render_template, jsonify, request
 from sqlalchemy.orm import joinedload
 from sqlalchemy.sql.expression import nullslast
@@ -100,7 +101,7 @@ def autocomplete_cities():
             for city in cities['hits']['hits']
         ]
         elasticsearch_is_connected = True
-    except Exception as e:
+    except ElasticConnectionError:
         elasticsearch_is_connected = False
 
     # Try to find with PostgreSQL (reconnect to db if got an error).
@@ -293,7 +294,7 @@ def get_cities():
         } for city in cities['hits']['hits']])
 
         elasticsearch_is_connected = True
-    except Exception as e:
+    except ElasticConnectionError:
         elasticsearch_is_connected = False
 
     # Try to find with PostgreSQL (reconnect to db if got an error).
