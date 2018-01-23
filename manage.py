@@ -246,6 +246,7 @@ def import_neo_routes(file_name='csv_data/routes.csv'):
                 continue
 
             try:
+                # pylint: disable=E1101
                 source_airport = NeoAirport.nodes.get(
                     iata_faa=row['Source airport']
                 )
@@ -254,6 +255,7 @@ def import_neo_routes(file_name='csv_data/routes.csv'):
                 continue
 
             try:
+                # pylint: disable=E1101
                 destination_airport = NeoAirport.nodes.get(
                     iata_faa=row['Destination airport']
                 )

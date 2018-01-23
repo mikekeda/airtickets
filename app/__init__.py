@@ -10,6 +10,7 @@ app.config.from_object('app.config.DefaultConfig')
 
 toolbar = DebugToolbarExtension(app)
 
+# pylint: disable=E1101
 app.jinja_env.globals['static'] = (
     lambda filename: url_for('static', filename=filename)
 )
