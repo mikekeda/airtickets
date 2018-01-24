@@ -9,8 +9,8 @@ from sqlalchemy.sql.expression import nullslast
 from sqlalchemy import desc
 from redis.exceptions import ConnectionError as RedisConnectionError
 
-from app import app, City, CityName, NeoAirport, NeoRoute
-from extensions import cache, redis_store, engine, db, es
+from app import app, City, CityName, NeoAirport, NeoRoute, cache, \
+    redis_store, engine, db, es
 
 BASE_TEMPLATES_DIR = os.path.dirname(os.path.abspath(__file__)) + '/templates'
 
@@ -112,7 +112,7 @@ def autocomplete_cities():
                 .order_by(nullslast(desc('population')))\
                 .limit(10)\
                 .all()
-        except Exception as e:
+        except Exception:
             db.session.close()
             engine.connect()
             cities = CityName.query.options(joinedload(CityName.city))\
@@ -195,8 +195,11 @@ def airports():
                 }
             )
             result['closest_city'] = cities['hits']['hits'][0]['_source']
-        except Exception as e:
-            result['closest_city'] = City.get_closest_cities(lat, lng, 1)[0]
+        except Exception:
+            result['closest_city'] = next(
+                iter(City.get_closest_cities(lat, lng, 1) or []),
+                None
+            )
 
     if redis_is_connected:
         redis_store.set(redis_key, pickle.dumps(result))
@@ -308,7 +311,7 @@ def get_cities():
                          .order_by(nullslast(desc(City.population)))\
                          .limit(10)\
                          .all()
-        except Exception as e:
+        except Exception:
             db.session.close()
             engine.connect()
             cities = City.query.options(joinedload(City.city_names))\

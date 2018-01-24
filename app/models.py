@@ -9,7 +9,8 @@ from neomodel import (StructuredNode, StructuredRel, StringProperty,
                       RelationshipTo)
 from neomodel import db as neomodel_db
 from redis.exceptions import ConnectionError as RedisConnectionError
-from extensions import db, engine, redis_store
+
+from app import db, engine, redis_store
 
 
 def _deg2rad(deg):

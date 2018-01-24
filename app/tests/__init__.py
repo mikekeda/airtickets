@@ -1,16 +1,16 @@
 from flask_testing import TestCase
 
-from app import app
+from app import app, db, redis_store
 
 
 class BaseTestCase(TestCase):
     def create_app(self):
         return app
 
-    @classmethod
-    def setUpClass(cls):
-        pass
+    def setUp(self):
+        db.create_all()
 
-    @classmethod
-    def tearDownClass(cls):
-        pass
+    def tearDown(self):
+        db.session.remove()
+        db.drop_all()
+        redis_store.flushall()

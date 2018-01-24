@@ -27,7 +27,7 @@ def get_env_var(name, default=''):
     return default
 
 
-class DefaultConfig(object):
+class DefaultConfig:
     # PostgreSQL configurations.
     POSTGRESQL_DATABASE_USER = get_env_var('DB_USER', 'airtickets')
     POSTGRESQL_DATABASE_PASSWORD = get_env_var('DB_PASSWORD', 'airtickets')
@@ -63,3 +63,21 @@ class DefaultConfig(object):
     FLIGHTSTATS_URL = 'https://api.flightstats.com'
     FLIGHTSTATS_APPID = 'f62cb23f'
     FLIGHTSTATS_APPKEY = '0d529248e16f6be628602b8a47315883'
+
+
+class TestConfig(DefaultConfig):
+    TESTING = True
+
+    # PostgreSQL configurations.
+    POSTGRESQL_DATABASE_USER = get_env_var('TEST_DB_USER', 'airtickets')
+    POSTGRESQL_DATABASE_PASSWORD = get_env_var('TEST_DB_PASSWORD',
+                                               'airtickets')
+    POSTGRESQL_DATABASE_DB = get_env_var('TEST_DB_NAME', 'build_airtickets')
+    POSTGRESQL_DATABASE_HOST = get_env_var('DB_HOST', '127.0.0.1')
+
+    SQLALCHEMY_DATABASE_URI = 'postgres://' + POSTGRESQL_DATABASE_USER + ':' \
+                              + POSTGRESQL_DATABASE_PASSWORD + '@' \
+                              + POSTGRESQL_DATABASE_HOST + '/' \
+                              + POSTGRESQL_DATABASE_DB
+
+    REDIS_URL = "redis://:@localhost:6379/6"
