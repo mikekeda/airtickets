@@ -41,6 +41,7 @@ class ModelMixin(object):
         db.session.commit()
         return self
 
+    # TODO: Need to refactor this.
     def get_or_create(self, model, **kwargs):
         """Get or create."""
         instance = db.session.query(model).filter_by(**kwargs).first()
