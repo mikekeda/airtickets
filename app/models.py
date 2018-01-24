@@ -18,9 +18,6 @@ def _deg2rad(deg):
 
 
 class PointMixin(object):
-    def __repr__(self):
-        return str(self.__dict__)
-
     @staticmethod
     def get_distance(lat1, lon1, lat2, lon2):
         """Get distance between two points."""
@@ -37,9 +34,6 @@ class PointMixin(object):
 
 
 class ModelMixin(object):
-    def __repr__(self):
-        return str(self.__dict__)
-
     def save(self):
         """Save."""
         db.session.add(self)
@@ -63,9 +57,6 @@ class NeoRoute(StructuredRel):
     equipment = StringProperty()
     departure_start = IntegerProperty(default=lambda: int(time.time()))
     departure_interval = IntegerProperty(default=86400)
-
-    def __repr__(self):
-        return '<NeoRoute {}>'.format(self.id)
 
     @staticmethod
     def get_path(from_airport, to_airport):
@@ -117,13 +108,9 @@ class NeoAirport(StructuredNode, PointMixin):
     timezone = FloatProperty()
     dst = StringProperty()
     tz_database_time_zone = StringProperty()
-
     available_destinations = RelationshipTo(
         'NeoAirport', 'AVAILABLE_DESTINATION', model=NeoRoute
     )
-
-    def __repr__(self):
-        return '<NeoAirport {}>'.format(self.airport_name)
 
     @classmethod
     def category(cls):
@@ -177,11 +164,7 @@ class City(db.Model, ModelMixin):
     latitude = db.Column(db.Float)
     longitude = db.Column(db.Float)
     population = db.Column(db.Integer, default=0)
-
     city_names = db.relationship('CityName', backref=db.backref('city_names'))
-
-    def __repr__(self):
-        return '<City {}>'.format(self.id)
 
     def __init__(self, gns_ufi, latitude, longitude, country_code='US',
                  subdivision_code=51, gns_fd='PPL', language_code='en',
@@ -272,14 +255,10 @@ class LanguageScript(db.Model, ModelMixin):
     __tablename__ = 'languagescript'
     id = db.Column(db.Integer, primary_key=True)
     language_script = db.Column(db.String(32), unique=True)
-
     city_names = db.relationship(
         'CityName',
         backref=db.backref('Languagescripts_city_names')
     )
-
-    def __repr__(self):
-        return '<Languagescript {}>'.format(self.language_script)
 
     def __init__(self, language_script='english'):
         self.language_script = language_script
@@ -293,11 +272,7 @@ class CityName(db.Model, ModelMixin):
         db.ForeignKey('languagescript.id'),
         primary_key=True)
     city_id = db.Column(db.Integer, db.ForeignKey('city.id'), primary_key=True)
-
     city = db.relationship('City', backref=db.backref('city'))
-
-    def __repr__(self):
-        return '<CityName {}>'.format(self.name)
 
     def __init__(self, name, language_script_id, city_id):
         self.name = name
@@ -355,7 +330,6 @@ class Airport(db.Model, ModelMixin):
     timezone = db.Column(db.Float)
     dst = db.Column(db.String(1))
     tz_database_time_zone = db.Column(db.String(64))
-
     routes_in = db.relationship('Route',
                                 backref=db.backref('to_airport'),
                                 foreign_keys='Route.destination_airport',
@@ -364,9 +338,6 @@ class Airport(db.Model, ModelMixin):
                                  backref=db.backref('from_airport'),
                                  foreign_keys='Route.source_airport',
                                  lazy='joined')
-
-    def __repr__(self):
-        return '<Airport {}>'.format(self.name)
 
     def __init__(self, name, city, country, iata_faa, icao, latitude,
                  longitude, altitude, timezone, dst, tz_database_time_zone):
@@ -474,9 +445,6 @@ class Airline(db.Model, ModelMixin):
     country = db.Column(db.String(64))
     active = db.Column(db.Boolean, default=False)
 
-    def __repr__(self):
-        return '<Airline {}>'.format(self.name)
-
     def __init__(self, name, alias, iata, icao, callsign, country,
                  active=False):
         self.name = name
@@ -510,14 +478,10 @@ class Route(db.Model, ModelMixin):
     destination_airport = db.Column(db.Integer, db.ForeignKey('airport.id'))
     codeshare = db.Column(db.Boolean, default=False)
     equipment = db.Column(db.String(48))
-
     next_routes = relationship(
         "Route",
         primaryjoin=remote(foreign(source_airport)) == destination_airport
     )
-
-    def __repr__(self):
-        return '<Route {}>'.format(self.id)
 
     def __init__(self, airline, source_airport, destination_airport, codeshare,
                  equipment):
