@@ -123,7 +123,7 @@ def import_neo_airports(file_name='csv_data/airports.csv'):
 
 
 @manager.command
-def import_airlines(file_name='csv_data/airlines.csv'):
+def import_airlines(file_name='csv_data/airlines.csv', rows=None):
     airline = None
     if file_name[0] != '/':
         file_name = current_dir + '/' + file_name
@@ -131,8 +131,11 @@ def import_airlines(file_name='csv_data/airlines.csv'):
     with open(file_name, 'r') as csvfile:
         spamreader = csv.DictReader(csvfile)
         for idx, row in enumerate(spamreader):
+            if rows and idx + 1 > rows:
+                # The rows limit was achieved - stop import.
+                break
 
-            # create Airline.
+            # Create Airline.
             airline = Airline(
                 row['Name'],
                 row['Alias'],

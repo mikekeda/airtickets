@@ -43,13 +43,14 @@ class ModelMixin(object):
         return self
 
     @classmethod
-    def get_or_create(cls, defaults={}, **kwargs):
+    def get_or_create(cls, defaults=None, **kwargs):
         """Get or create."""
         obj = db.session.query(cls).filter_by(**kwargs).first()
         created = False
         if not obj:
             kwargs = dict(kwargs)
-            kwargs.update(defaults)  # which returns None since it mutates z
+            if defaults:
+                kwargs.update(defaults)
             obj = cls(**kwargs)
             obj.save()
             created = True
