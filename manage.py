@@ -14,12 +14,11 @@ from neomodel import db as neomodel_db
 from elasticsearch import helpers
 
 from app import app, db, es
-from app.models import (City, LanguageScript, CityName, Airport, Airline,
-                        Route, NeoAirport)
+from app.models import City, LanguageScript, CityName, Airline, NeoAirport
 
 
 current_dir = os.path.dirname(os.path.realpath(__file__))
-
+chunk_size = 100
 headers = {'content-type': 'application/json'}
 
 manager = Manager(app)
@@ -32,76 +31,44 @@ manager.add_command('db', MigrateCommand)
 
 
 @manager.command
-def import_cities(file_name='csv_data/worldcities.csv'):
+def import_cities(file_name='csv_data/worldcities.csv', rows=None):
+    """ Import cities. """
     if file_name[0] != '/':
         file_name = current_dir + '/' + file_name
 
     with open(file_name, 'r') as csvfile:
         spamreader = csv.DictReader(csvfile)
         for idx, row in enumerate(spamreader):
+            if rows and idx + 1 > rows:
+                # The rows limit was achieved - stop import.
+                break
 
-            # create LanguageScript.
-            lang = LanguageScript(row[' language script'])
-            lang, _ = lang.get_or_create(
-                LanguageScript,
-                language_script=lang.language_script
+            # Create a LanguageScript.
+            lang, _ = LanguageScript.get_or_create(
+                language_script=row[' language script']
             )
 
-            # create City.
-            city = City(
-                row[' GNS UFI'] or 0,
-                row[' latitude'],
-                row[' longitude'],
-                row['ISO 3166-1 country code'],
-                row[' FIPS 5-2 subdivision code'],
-                row[' GNS FD'],
-                row[' ISO 639-1 language code'],
+            # Create a City.
+            city, _ = City.get_or_create(
+                gns_ufi=row[' GNS UFI'] or 0,
+                defaults={
+                    'latitude': row[' latitude'],
+                    'longitude': row[' longitude'],
+                    'country_code': row['ISO 3166-1 country code'],
+                    'subdivision_code': row[' FIPS 5-2 subdivision code'],
+                    'gns_fd': row[' GNS FD'],
+                    'language_code': row[' ISO 639-1 language code'],
+                }
             )
-            if row[' GNS UFI']:
-                city, _ = city.get_or_create(City, gns_ufi=city.gns_ufi)
-            else:
-                city = city.save()
 
-            # create CityName.
-            name = CityName(
-                row[' name'],
-                lang.id,
-                city.id
-            )
-            name.get_or_create(
-                CityName,
+            # Create a CityName.
+            CityName.get_or_create(
                 language_script_id=lang.id,
-                city_id=city.id
+                city_id=city.id,
+                defaults={'name': row[' name']}
             )
 
             print(idx, row[' name'])
-
-
-@manager.command
-def import_airports(file_name='csv_data/airports.csv'):
-    if file_name[0] != '/':
-        file_name = current_dir + '/' + file_name
-
-    with open(file_name, 'r') as csvfile:
-        spamreader = csv.DictReader(csvfile)
-        for idx, row in enumerate(spamreader):
-            # create Airport.
-            airport = Airport(
-                row['Name'],
-                row['City'],
-                row['Country'],
-                row['IATA/FAA'],
-                row['ICAO'],
-                row['Latitude'],
-                row['Longitude'],
-                row['Altitude'],
-                row['Timezone'],
-                row['DST'],
-                row['Tz database time zone'],
-            )
-            airport.save()
-
-            print(idx, airport.name)
 
 
 @manager.command
@@ -157,6 +124,7 @@ def import_neo_airports(file_name='csv_data/airports.csv'):
 
 @manager.command
 def import_airlines(file_name='csv_data/airlines.csv'):
+    airline = None
     if file_name[0] != '/':
         file_name = current_dir + '/' + file_name
 
@@ -174,52 +142,13 @@ def import_airlines(file_name='csv_data/airlines.csv'):
                 row['Country'],
                 row['Active'] == 'Y',
             )
-            airline.save()
+            # Bulk save.
+            airline.save(commit=(idx % chunk_size == 0))
 
-            try:
-                print(idx, airline.name)
-            except UnicodeEncodeError:
-                print(idx)
+            print(idx, airline.name)
 
-
-@manager.command
-def import_routes(file_name='csv_data/routes.csv'):
-    if file_name[0] != '/':
-        file_name = current_dir + '/' + file_name
-
-    with open(file_name, 'r') as csvfile:
-        spamreader = csv.DictReader(csvfile)
-        for idx, row in enumerate(spamreader):
-
-            if not all([row['Source airport'], row['Destination airport'],
-                        row['Airline']]):
-                continue
-
-            airline = Airline.query.filter(
-                Airline.iata == row['Airline']
-            ).first()
-            source_airport = Airport.query.filter(
-                Airport.iata_faa == row['Source airport']
-            ).first()
-            destination_airport = Airport.query.filter(
-                Airport.iata_faa == row['Destination airport']
-            ).first()
-
-            if not all([airline, source_airport, destination_airport]):
-                continue
-
-            # create Route.
-            route = Route(
-                int(airline.id),
-                int(source_airport.id),
-                int(destination_airport.id),
-                row['Codeshare'] == 'Y',
-                row['Equipment'],
-            )
-            route.save()
-
-            print(idx, route.id, source_airport.name, '-',
-                  destination_airport.name)
+        # Save last chunk.
+        airline.save()
 
 
 @manager.command

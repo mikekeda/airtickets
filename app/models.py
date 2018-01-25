@@ -35,21 +35,24 @@ class PointMixin(object):
 
 
 class ModelMixin(object):
-    def save(self):
+    def save(self, commit=True):
         """Save."""
         db.session.add(self)
-        db.session.commit()
+        if commit:
+            db.session.commit()
         return self
 
-    # TODO: Need to refactor this.
-    def get_or_create(self, model, **kwargs):
+    @classmethod
+    def get_or_create(cls, defaults={}, **kwargs):
         """Get or create."""
-        instance = db.session.query(model).filter_by(**kwargs).first()
-        if instance:
-            return instance, False
+        obj = db.session.query(cls).filter_by(**kwargs).first()
+        created = False
+        if not obj:
+            obj = cls(**{**kwargs, **defaults})
+            obj.save()
+            created = True
 
-        instance = self.save()
-        return instance, True
+        return obj, created
 
 
 class NeoRoute(StructuredRel):
