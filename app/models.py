@@ -48,7 +48,9 @@ class ModelMixin(object):
         obj = db.session.query(cls).filter_by(**kwargs).first()
         created = False
         if not obj:
-            obj = cls(**{**kwargs, **defaults})
+            kwargs = dict(kwargs)
+            kwargs.update(defaults)  # which returns None since it mutates z
+            obj = cls(**kwargs)
             obj.save()
             created = True
 
