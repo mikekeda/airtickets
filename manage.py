@@ -156,7 +156,7 @@ def import_airlines(file_name='csv_data/airlines.csv', rows=None):
 
 @manager.command
 def import_neo_routes(file_name='csv_data/routes.csv'):
-    """import routes."""
+    """ Import routes. """
     if file_name[0] != '/':
         file_name = current_dir + '/' + file_name
 
@@ -286,14 +286,18 @@ def create_cities_index():
 
 
 @manager.command
-def import_populations(file_name='csv_data/cities-populations.csv'):
-    """import populations."""
+def import_populations(file_name='csv_data/cities-populations.csv', rows=None):
+    """ Import populations. """
     if file_name[0] != '/':
         file_name = current_dir + '/' + file_name
 
     with open(file_name, 'r') as csvfile:
         spamreader = csv.DictReader(csvfile)
         for idx, row in enumerate(spamreader):
+            if rows and idx + 1 > rows:
+                # The rows limit was achieved - stop import.
+                break
+
             if row['Population']:
                 cities = City.query.options()\
                     .filter(City.latitude == float(row['Latitude']))\
