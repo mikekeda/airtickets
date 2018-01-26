@@ -338,14 +338,6 @@ class Airport(db.Model, ModelMixin):
     timezone = db.Column(db.Float)
     dst = db.Column(db.String(1))
     tz_database_time_zone = db.Column(db.String(64))
-    routes_in = db.relationship('Route',
-                                backref=db.backref('to_airport'),
-                                foreign_keys='Route.destination_airport',
-                                lazy='joined')
-    routes_out = db.relationship('Route',
-                                 backref=db.backref('from_airport'),
-                                 foreign_keys='Route.source_airport',
-                                 lazy='joined')
 
     def __init__(self, name, city, country, iata_faa, icao, latitude,
                  longitude, altitude, timezone, dst, tz_database_time_zone):
@@ -475,52 +467,6 @@ class Airline(db.Model, ModelMixin):
             'country': self.country,
             'active': self.active,
         }
-        return result
-
-
-class Route(db.Model, ModelMixin):
-    __tablename__ = 'route'
-    id = db.Column(db.Integer, primary_key=True)
-    airline = db.Column(db.Integer, db.ForeignKey('airline.id'))
-    source_airport = db.Column(db.Integer, db.ForeignKey('airport.id'))
-    destination_airport = db.Column(db.Integer, db.ForeignKey('airport.id'))
-    codeshare = db.Column(db.Boolean, default=False)
-    equipment = db.Column(db.String(48))
-    next_routes = relationship(
-        "Route",
-        primaryjoin=remote(foreign(source_airport)) == destination_airport
-    )
-
-    def __init__(self, airline, source_airport, destination_airport, codeshare,
-                 equipment):
-        self.airline = airline
-        self.source_airport = source_airport
-        self.destination_airport = destination_airport
-        self.codeshare = codeshare
-        self.equipment = equipment
-
-    def serialize(self):
-        """Serialize."""
-        result = {
-            'id': self.id,
-            'airline': self.airline,
-            'source_airport': self.source_airport,
-            'destination_airport': self.destination_airport,
-            'codeshare': self.codeshare,
-            'equipment': self.equipment,
-            'from_airport': self.from_airport.serialize(),
-            'to_airport': self.to_airport.serialize(),
-        }
-        return result
-
-    def serialize_with_next_routes(self, destination):
-        """Serialize."""
-        result = self.serialize()
-        result['next_routes'] = [
-            route.serialize()
-            for route in self.next_routes
-            if route.destination_airport == destination
-        ]
         return result
 
 

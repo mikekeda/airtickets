@@ -194,7 +194,7 @@ def import_neo_routes(file_name='csv_data/routes.csv'):
                 print('no destination_airport', row['Destination airport'])
                 continue
 
-            # create Route.
+            # Create Route.
             route = source_airport.available_destinations.connect(
                 destination_airport
             )

@@ -30,5 +30,5 @@ db.init_app(app)
 
 
 from .models import (City, LanguageScript, CityName, Airport, Airline,
-                     Route, NeoAirport, NeoRoute)
+                     NeoAirport, NeoRoute)
 from app import views, models
