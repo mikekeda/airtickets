@@ -3,7 +3,6 @@ import math
 import time
 
 from sqlalchemy.sql import text
-from sqlalchemy.orm import relationship, foreign, remote
 from neomodel import (StructuredNode, StructuredRel, StringProperty,
                       IntegerProperty, FloatProperty, BooleanProperty,
                       RelationshipTo)
