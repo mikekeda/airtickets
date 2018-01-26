@@ -60,10 +60,6 @@ class DefaultConfig:
 
     SQLALCHEMY_TRACK_MODIFICATIONS = True
 
-    FLIGHTSTATS_URL = 'https://api.flightstats.com'
-    FLIGHTSTATS_APPID = 'f62cb23f'
-    FLIGHTSTATS_APPKEY = '0d529248e16f6be628602b8a47315883'
-
 
 class TestConfig(DefaultConfig):
     TESTING = True
