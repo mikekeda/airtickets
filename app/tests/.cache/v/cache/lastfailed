@@ -1,4 +1,0 @@
-{
-  "test_views.py::TestOptionMarker::test_application_config_teardown": true,
-  "test_views.py::TestOptionMarker::test_update_application_config": true
-}
