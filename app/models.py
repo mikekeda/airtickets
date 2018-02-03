@@ -225,7 +225,7 @@ class City(db.Model, ModelMixin):
 
         conn.close()
         if redis_is_connected:
-            redis_store.set(redis_key, pickle.dumps(result))
+            redis_store.set(redis_key, pickle.dumps(result), 86400)
 
         return result
 

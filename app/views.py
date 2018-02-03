@@ -43,7 +43,7 @@ def technologies():
     return render_template('technologies.html')
 
 
-@cache.cached(timeout=12 * 60 * 60)
+@cache.cached(timeout=86400)
 @app.route('/ajax/autocomplete/cities')
 def autocomplete_cities():
     """Autocomplete for cities."""
@@ -106,20 +106,11 @@ def autocomplete_cities():
 
     # Try to find with PostgreSQL (reconnect to db if got an error).
     if not elasticsearch_is_connected:
-        try:
-            cities = CityName.query.options(joinedload(CityName.city))\
-                .filter(CityName.name.like(query + '%'))\
-                .order_by(nullslast(desc('population')))\
-                .limit(10)\
-                .all()
-        except Exception:
-            db.session.close()
-            engine.connect()
-            cities = CityName.query.options(joinedload(CityName.city))\
-                .filter(CityName.name.like(query + '%'))\
-                .order_by(nullslast(desc('population')))\
-                .limit(10)\
-                .all()
+        cities = CityName.query.options(joinedload(CityName.city))\
+            .filter(CityName.name.like(query + '%'))\
+            .order_by(nullslast(desc('population')))\
+            .limit(10)\
+            .all()
 
         result = [
             city.autocomplete_serialize()
@@ -127,12 +118,12 @@ def autocomplete_cities():
         ]
 
     if redis_is_connected:
-        redis_store.set(redis_key, pickle.dumps(result))
+        redis_store.set(redis_key, pickle.dumps(result), 86400)
 
     return jsonify(suggestions=result)
 
 
-@cache.cached(timeout=12 * 60 * 60)
+@cache.cached(timeout=86400)
 @app.route('/ajax/airports')
 def airports():
     """Find closest airports."""
@@ -195,19 +186,19 @@ def airports():
                 }
             )
             result['closest_city'] = cities['hits']['hits'][0]['_source']
-        except Exception:
+        except ElasticConnectionError:
             result['closest_city'] = next(
                 iter(City.get_closest_cities(lat, lng, 1) or []),
                 None
             )
 
     if redis_is_connected:
-        redis_store.set(redis_key, pickle.dumps(result))
+        redis_store.set(redis_key, pickle.dumps(result), 86400)
 
     return jsonify(result)
 
 
-@cache.cached(timeout=12 * 60 * 60)
+@cache.cached(timeout=86400)
 @app.route('/ajax/routes')
 def routes():
     """Find routes between two airports."""
@@ -227,7 +218,7 @@ def routes():
     result = NeoRoute.get_path(from_airport, to_airport)
 
     if redis_is_connected:
-        redis_store.set(redis_key, pickle.dumps(result))
+        redis_store.set(redis_key, pickle.dumps(result), 86400)
 
     return jsonify(routes=result)
 
@@ -326,6 +317,6 @@ def get_cities():
         result = [city.serialize() for city in cities]
 
     if redis_is_connected:
-        redis_store.set(redis_key, pickle.dumps(result))
+        redis_store.set(redis_key, pickle.dumps(result), 86400)
 
     return jsonify(json_list=result)
