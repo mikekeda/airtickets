@@ -10,7 +10,7 @@ from sqlalchemy import desc
 from redis.exceptions import ConnectionError as RedisConnectionError
 
 from app import app, City, CityName, NeoAirport, NeoRoute, cache, \
-    redis_store, engine, db, es
+    redis_store, es
 
 BASE_TEMPLATES_DIR = os.path.dirname(os.path.abspath(__file__)) + '/templates'
 
@@ -25,7 +25,7 @@ def select_parent_template():
 # Routing.
 
 @app.errorhandler(404)
-def page_not_found(error):
+def page_not_found(_):
     return render_template('404.html'), 404
 
 
@@ -293,26 +293,14 @@ def get_cities():
 
     # Try to find with PostgreSQL (reconnect to db if got an error).
     if not elasticsearch_is_connected:
-        try:
-            cities = City.query.options(joinedload(City.city_names))\
-                         .filter(City.longitude < ne_lng)\
-                         .filter(City.latitude < ne_lat)\
-                         .filter(City.longitude > sw_lng)\
-                         .filter(City.latitude > sw_lat)\
-                         .order_by(nullslast(desc(City.population)))\
-                         .limit(10)\
-                         .all()
-        except Exception:
-            db.session.close()
-            engine.connect()
-            cities = City.query.options(joinedload(City.city_names))\
-                         .filter(City.longitude < ne_lng)\
-                         .filter(City.latitude < ne_lat)\
-                         .filter(City.longitude > sw_lng)\
-                         .filter(City.latitude > sw_lat)\
-                         .order_by(nullslast(desc(City.population)))\
-                         .limit(10)\
-                         .all()
+        cities = City.query.options(joinedload(City.city_names))\
+                     .filter(City.longitude < ne_lng)\
+                     .filter(City.latitude < ne_lat)\
+                     .filter(City.longitude > sw_lng)\
+                     .filter(City.latitude > sw_lat)\
+                     .order_by(nullslast(desc(City.population)))\
+                     .limit(10)\
+                     .all()
 
         result = [city.serialize() for city in cities]
 
