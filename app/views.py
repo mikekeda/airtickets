@@ -9,8 +9,8 @@ from sqlalchemy.sql.expression import nullslast
 from sqlalchemy import desc
 from redis.exceptions import ConnectionError as RedisConnectionError
 
-from app import app, City, CityName, NeoAirport, NeoRoute, cache, \
-    redis_store, es
+from app import app, cache, redis_store, es
+from .models import City, CityName, NeoAirport, NeoRoute
 
 BASE_TEMPLATES_DIR = os.path.dirname(os.path.abspath(__file__)) + '/templates'
 

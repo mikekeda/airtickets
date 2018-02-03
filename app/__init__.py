@@ -28,7 +28,4 @@ app.jinja_env.globals['static'] = (
 
 db.init_app(app)
 
-
-from .models import (City, LanguageScript, CityName, Airline, NeoAirport,
-                     NeoRoute)
-from app import views, models
+from app import views
