@@ -136,17 +136,16 @@ def import_airlines(file_name='csv_data/airlines.csv', rows=None):
                 break
 
             # Create Airline.
-            airline = Airline(
-                row['Name'],
-                row['Alias'],
-                row['IATA'],
-                row['ICAO'],
-                row['Callsign'],
-                row['Country'],
-                row['Active'] == 'Y',
+            airline, _ = Airline.get_or_create(
+                name=row['Name'],
+                alias=row['Alias'],
+                iata=row['IATA'],
+                icao=row['ICAO'],
+                callsign=row['Callsign'],
+                country=row['Country'],
+                active=row['Active'] == 'Y',
+                commit=(idx % chunk_size == 0)
             )
-            # Bulk save.
-            airline.save(commit=(idx % chunk_size == 0))
 
             print(idx, airline.name)
 

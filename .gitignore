@@ -3,6 +3,7 @@ node_modules/
 reports/*
 !reports/.gitkeep
 __pycache__/
+.cache/
 
 .coverage
 
