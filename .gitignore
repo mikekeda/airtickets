@@ -4,6 +4,7 @@ reports/*
 !reports/.gitkeep
 __pycache__/
 .cache/
+.pytest_cache/
 
 .coverage
 
