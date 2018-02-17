@@ -7,7 +7,7 @@ SITE_ENV_PREFIX = 'AIRTICKETS'
 
 
 def get_env_var(name, default=''):
-    """Get all sensitive data from google vm custom metadata."""
+    """ Get all sensitive data from google vm custom metadata. """
     try:
         name = '_'.join([SITE_ENV_PREFIX, name])
         res = os.environ.get(name)
@@ -29,15 +29,12 @@ def get_env_var(name, default=''):
 
 class DefaultConfig:
     # PostgreSQL configurations.
-    POSTGRESQL_DATABASE_USER = get_env_var('DB_USER', 'airtickets')
-    POSTGRESQL_DATABASE_PASSWORD = get_env_var('DB_PASSWORD', 'airtickets')
-    POSTGRESQL_DATABASE_DB = get_env_var('DB_NAME', 'airtickets')
-    POSTGRESQL_DATABASE_HOST = get_env_var('DB_HOST', '127.0.0.1')
-
-    SQLALCHEMY_DATABASE_URI = 'postgres://' + POSTGRESQL_DATABASE_USER + ':' \
-                              + POSTGRESQL_DATABASE_PASSWORD + '@' \
-                              + POSTGRESQL_DATABASE_HOST + '/' \
-                              + POSTGRESQL_DATABASE_DB
+    SQLALCHEMY_DATABASE_URI = 'postgres://{}:{}@{}/{}'.format(
+        get_env_var('DB_USER', 'airtickets'),
+        get_env_var('DB_PASSWORD', 'airtickets'),
+        get_env_var('DB_HOST', '127.0.0.1'),
+        get_env_var('DB_NAME', 'airtickets')
+    )
 
     NEO4J_DATABASE_USER = get_env_var('NEO4J_USER', 'airtickets')
     NEO4J_DATABASE_PASSWORD = get_env_var(
@@ -55,7 +52,7 @@ class DefaultConfig:
 
     ELASTICSEARCH_HOST = "localhost:9200"
 
-    # set a 'SECRET_KEY' to enable the Flask session cookies
+    # Set a 'SECRET_KEY' to enable the Flask session cookies.
     SECRET_KEY = 'A0Zr98j/3yX I~XHH!jmN]LWX/,?RT'
 
     SQLALCHEMY_TRACK_MODIFICATIONS = True
@@ -65,15 +62,11 @@ class TestConfig(DefaultConfig):
     TESTING = True
 
     # PostgreSQL configurations.
-    POSTGRESQL_DATABASE_USER = get_env_var('TEST_DB_USER', 'airtickets')
-    POSTGRESQL_DATABASE_PASSWORD = get_env_var('TEST_DB_PASSWORD',
-                                               'airtickets')
-    POSTGRESQL_DATABASE_DB = get_env_var('TEST_DB_NAME', 'build_airtickets')
-    POSTGRESQL_DATABASE_HOST = get_env_var('DB_HOST', '127.0.0.1')
-
-    SQLALCHEMY_DATABASE_URI = 'postgres://' + POSTGRESQL_DATABASE_USER + ':' \
-                              + POSTGRESQL_DATABASE_PASSWORD + '@' \
-                              + POSTGRESQL_DATABASE_HOST + '/' \
-                              + POSTGRESQL_DATABASE_DB
+    SQLALCHEMY_DATABASE_URI = 'postgres://{}:{}@{}/{}'.format(
+        get_env_var('TEST_DB_USER', 'airtickets'),
+        get_env_var('TEST_DB_PASSWORD', 'airtickets'),
+        get_env_var('DB_HOST', '127.0.0.1'),
+        get_env_var('TEST_DB_NAME', 'build_airtickets')
+    )
 
     REDIS_URL = "redis://:@localhost:6379/6"

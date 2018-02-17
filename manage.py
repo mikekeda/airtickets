@@ -216,6 +216,7 @@ def import_neo_routes(file_name='csv_data/routes.csv'):
 @manager.command
 def import_all():
     import_cities()
+    import_populations()
     import_airlines()
     import_neo_airports()
     import_neo_routes()

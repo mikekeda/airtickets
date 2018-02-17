@@ -35,7 +35,7 @@ class PointMixin(object):
 
 class ModelMixin(object):
     def save(self, commit=True):
-        """Save."""
+        """ Save. """
         db.session.add(self)
         if commit:
             db.session.commit()
@@ -121,13 +121,8 @@ class NeoAirport(StructuredNode, PointMixin):
 
     @classmethod
     def category(cls):
+        """ Implement abstract method of StructuredNode. """
         return "{}.nodes attribute".format(cls.__name__)
-
-    def get_connections(self):
-        results, _ = self.cypher(
-            "START a=node({self}) MATCH a<-[:CONNECT]-(b) RETURN b"
-        )
-        return [self.__class__.inflate(row[0]) for row in results]
 
     @staticmethod
     def get_closest_airports(lat, lng, limit=1, distance=500, offset=0):
