@@ -49,7 +49,7 @@ class AirticketsModelsTest(BaseTestCase):
                 'longitude': 68.730449,
                 'population': 0,
                 'subdivision_code': '29'
-             }
+            }
         )
 
         # Test LanguageScript model.
@@ -85,8 +85,8 @@ class AirticketsModelsTest(BaseTestCase):
         # Test CityName elastic_serialize() method.
         expected.update({
             'location': {'lat': 33.175678, 'lon': 68.730449},
-            'population': 0}
-        )
+            'population': 0
+        })
         self.assertDictEqual(
             city_name.elastic_serialize(),
             {
