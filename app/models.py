@@ -1,4 +1,3 @@
-import pickle
 import math
 import time
 
@@ -7,9 +6,8 @@ from neomodel import (StructuredNode, StructuredRel, StringProperty,
                       IntegerProperty, FloatProperty, BooleanProperty,
                       RelationshipTo)
 from neomodel import db as neomodel_db
-from redis.exceptions import ConnectionError as RedisConnectionError
 
-from app import db, engine, redis_store
+from app import db, engine
 
 
 def _deg2rad(deg):
@@ -171,19 +169,6 @@ class City(db.Model, ModelMixin):
     @staticmethod
     def get_closest_cities(lat, lng, limit=1, offset=0):
         """ Get closest cities by coordinates. """
-
-        redis_key = '|'.join(
-            ['get_closest_cities', str(lat), str(lng), str(limit), str(offset)]
-        )
-
-        try:
-            result = redis_store.get(redis_key)
-            redis_is_connected = True
-            if result:
-                return pickle.loads(result)
-        except RedisConnectionError:
-            redis_is_connected = False
-
         result = []
         conn = engine.connect()
 
@@ -219,8 +204,6 @@ class City(db.Model, ModelMixin):
             result.append(item)
 
         conn.close()
-        if redis_is_connected:
-            redis_store.set(redis_key, pickle.dumps(result), 86400)
 
         return result
 

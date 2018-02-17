@@ -37,6 +37,10 @@ class AirticketsViewTest(BaseTestCase):
                                        '&limit=5&find_closest_city=true')
             self.assert200(response)
 
+            response = self.client.get('/ajax/airports?lat=49.0&lng=23.0'
+                                       '&limit=7')
+            self.assert200(response)
+
         test()  # first run.
         test()  # second run, to check cached result.
 
