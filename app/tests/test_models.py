@@ -90,7 +90,7 @@ class AirticketsModelsTest(BaseTestCase):
         self.assertDictEqual(
             city_name.elastic_serialize(),
             {
-                '_index': 'main-index',
+                '_index': 'airtickets-city-index',
                 '_type': 'CityName',
                 '_id': 1,
                 '_source': expected

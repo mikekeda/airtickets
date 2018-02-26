@@ -274,7 +274,7 @@ class CityName(db.Model, ModelMixin):
         serialize_dict['population'] = getattr(self.city, 'population', 0)
 
         return {
-            '_index': 'main-index',
+            '_index': 'airtickets-city-index',
             '_type': 'CityName',
             '_id': self.city_id,
             '_source': serialize_dict

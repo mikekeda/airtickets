@@ -2,7 +2,9 @@ import os
 import pickle
 import math
 
-from elasticsearch.exceptions import ConnectionError as ElasticConnectionError
+from elasticsearch.exceptions import (
+    NotFoundError, ConnectionError as ElasticConnectionError
+)
 from flask import render_template, jsonify, request
 from sqlalchemy.orm import joinedload
 from redis.exceptions import ConnectionError as RedisConnectionError
@@ -61,34 +63,25 @@ def autocomplete_cities():
     # Try to find with Elasticsearch.
     try:
         cities = es.search(
-            index='main-index',
+            index='airtickets-city-index',
             from_=0,
             size=10,
             doc_type='CityName',
             body={
                 "query": {
                     "bool": {
-                        "should": {
-                            "match_phrase_prefix": {
-                                "value.folded": {
-                                    "query": query,
-                                    "boost": 10
-                                }
-                            }
-                        },
                         "must": {
                             "match_phrase_prefix": {
-                                "value.folded": {
-                                    "query": query,
-                                    "fuzziness": 'AUTO'
+                                "value": {
+                                    "query": query
                                 }
-                            },
+                            }
                         }
                     }
                 },
                 "sort": {
                     "population": {
-                        "order": 'desc'
+                        "order": "desc"
                     }
                 }
             }
@@ -97,7 +90,7 @@ def autocomplete_cities():
             city['_source']
             for city in cities['hits']['hits']
         ]
-    except ElasticConnectionError:
+    except (ElasticConnectionError, NotFoundError):
         # Try to find with PostgreSQL.
         cities = CityName.query.join(CityName.city)\
             .filter(CityName.name.like(query + '%'))\
@@ -145,16 +138,14 @@ def airports():
         # Try to find with Elasticsearch.
         try:
             cities = es.search(
-                index='main-index',
-                from_=0, size=1,
+                index='airtickets-city-index',
+                from_=0,
+                size=1,
                 doc_type='CityName',
                 body={
                     "query": {
-                        "filtered": {
-                            "query": {
-                                "match_all": {}
-                            },
-                            "filter": {
+                        "bool": {
+                            "must": {
                                 "geo_distance": {
                                     "distance": "500km",
                                     "location": {
@@ -179,7 +170,7 @@ def airports():
                 }
             )
             result['closest_city'] = cities['hits']['hits'][0]['_source']
-        except ElasticConnectionError:
+        except (ElasticConnectionError, NotFoundError):
             result['closest_city'] = next(
                 iter(City.get_closest_cities(lat, lng, 1) or []),
                 None
@@ -241,13 +232,14 @@ def get_cities():
     # Try to find with Elasticsearch.
     try:
         cities = es.search(
-            index='main-index',
-            from_=0, size=10,
+            index='airtickets-city-index',
+            from_=0,
+            size=10,
             doc_type='CityName',
             body={
                 "query": {
-                    "filtered": {
-                        "filter": {
+                    "bool": {
+                        "must": {
                             "geo_distance": {
                                 "distance": str(NeoAirport.get_distance(
                                     ne_lat, ne_lng, sw_lat, sw_lng
@@ -268,13 +260,13 @@ def get_cities():
             }
         )
 
-        result = jsonify(json_list=[{
+        result = [{
             'city_names': [city['_source']['value']],
             'latitude': city['_source']['data']['lat'],
             'longitude': city['_source']['data']['lng'],
             'population': city['_source']['population']
-        } for city in cities['hits']['hits']])
-    except ElasticConnectionError:
+        } for city in cities['hits']['hits']]
+    except (ElasticConnectionError, NotFoundError):
         # Try to find with PostgreSQL.
         cities = City.query.options(joinedload(City.city_names))\
                      .filter(City.longitude < ne_lng)\

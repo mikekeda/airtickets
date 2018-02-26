@@ -12,6 +12,9 @@ from flask_migrate import Migrate, MigrateCommand
 from sqlalchemy.orm import joinedload
 from neomodel import db as neomodel_db
 from elasticsearch import helpers
+from elasticsearch.exceptions import (
+    NotFoundError, ConnectionError as ElasticConnectionError
+)
 
 from app import app, db, es
 from app.models import City, LanguageScript, CityName, Airline, NeoAirport
@@ -243,14 +246,8 @@ def create_cities_index():
             "CityName": {
                 "properties": {
                     "value": {
-                        "type": "string",
-                        "index": "not_analyzed",
-                        "fields": {
-                            "folded": {
-                                "type": "string",
-                                "analyzer": "folding"
-                            }
-                        }
+                        "type": "text",
+                        "analyzer": "folding"
                     },
                     "location": {
                         "type": "geo_point"
@@ -267,10 +264,10 @@ def create_cities_index():
     }
 
     try:
-        es.indices.delete(index="main-index")
-    except Exception as e:
-        print(e)
-    es.indices.create(index='main-index', body=index_body)
+        es.indices.delete(index="airtickets-city-index")
+    except (ElasticConnectionError, NotFoundError):
+        pass
+    es.indices.create(index='airtickets-city-index', body=index_body)
 
     num_of_items = CityName.query.count()
     num_of_pages = num_of_items // items_per_page + 1
