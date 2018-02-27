@@ -10,6 +10,7 @@ import requests
 from flask_script import Manager, Server
 from flask_migrate import Migrate, MigrateCommand
 from sqlalchemy.orm import joinedload
+from sqlalchemy import func
 from neomodel import db as neomodel_db
 from elasticsearch import helpers
 from elasticsearch.exceptions import (
@@ -75,6 +76,67 @@ def import_cities(file_name='csv_data/worldcities.csv', rows=None):
 
 
 @manager.command
+def import_populations(file_name='csv_data/cities-populations.csv', rows=None):
+    """ Import populations. """
+    if file_name[0] != '/':
+        file_name = current_dir + '/' + file_name
+
+    with open(file_name, 'r') as csvfile:
+        spamreader = csv.DictReader(csvfile)
+        for idx, row in enumerate(spamreader):
+            if rows and idx + 1 > rows:
+                # The rows limit was achieved - stop import.
+                break
+
+            if row['Population']:
+                cities = City.query.options().filter(
+                    func.abs(City.latitude - float(row['Latitude'])) < 0.0005
+                ).filter(
+                    func.abs(City.longitude - float(row['Longitude'])) < 0.0005
+                ).all()
+
+                for city in cities:
+                    city_names = [c.name.lower() for c in city.city_names]
+                    if row['City'].lower() in city_names:
+                        city.population = int(row['Population'])
+                        city.save()
+
+                        print(idx, row['City'], row['Country'], 'population',
+                              row['Population'])
+
+
+@manager.command
+def import_airlines(file_name='csv_data/airlines.csv', rows=None):
+    airline = None
+    if file_name[0] != '/':
+        file_name = current_dir + '/' + file_name
+
+    with open(file_name, 'r') as csvfile:
+        spamreader = csv.DictReader(csvfile)
+        for idx, row in enumerate(spamreader):
+            if rows and idx + 1 > rows:
+                # The rows limit was achieved - stop import.
+                break
+
+            # Create Airline.
+            airline, _ = Airline.get_or_create(
+                name=row['Name'],
+                alias=row['Alias'],
+                iata=row['IATA'],
+                icao=row['ICAO'],
+                callsign=row['Callsign'],
+                country=row['Country'],
+                active=row['Active'] == 'Y',
+                commit=(idx % chunk_size == 0)
+            )
+
+            print(idx, airline.name)
+
+        # Save last chunk.
+        airline.save()
+
+
+@manager.command
 def import_neo_airports(file_name='csv_data/airports.csv'):
     if file_name[0] != '/':
         file_name = current_dir + '/' + file_name
@@ -123,37 +185,6 @@ def import_neo_airports(file_name='csv_data/airports.csv'):
         query = "match (t:NeoAirport) with t call spatial.addNode('geom',t) " \
                 "YIELD node return count(*)"
         neomodel_db.cypher_query(query)
-
-
-@manager.command
-def import_airlines(file_name='csv_data/airlines.csv', rows=None):
-    airline = None
-    if file_name[0] != '/':
-        file_name = current_dir + '/' + file_name
-
-    with open(file_name, 'r') as csvfile:
-        spamreader = csv.DictReader(csvfile)
-        for idx, row in enumerate(spamreader):
-            if rows and idx + 1 > rows:
-                # The rows limit was achieved - stop import.
-                break
-
-            # Create Airline.
-            airline, _ = Airline.get_or_create(
-                name=row['Name'],
-                alias=row['Alias'],
-                iata=row['IATA'],
-                icao=row['ICAO'],
-                callsign=row['Callsign'],
-                country=row['Country'],
-                active=row['Active'] == 'Y',
-                commit=(idx % chunk_size == 0)
-            )
-
-            print(idx, airline.name)
-
-        # Save last chunk.
-        airline.save()
 
 
 @manager.command
@@ -217,15 +248,6 @@ def import_neo_routes(file_name='csv_data/routes.csv'):
 
 
 @manager.command
-def import_all():
-    import_cities()
-    import_populations()
-    import_airlines()
-    import_neo_airports()
-    import_neo_routes()
-
-
-@manager.command
 def create_cities_index():
     items_per_page = 1000
 
@@ -283,32 +305,12 @@ def create_cities_index():
 
 
 @manager.command
-def import_populations(file_name='csv_data/cities-populations.csv', rows=None):
-    """ Import populations. """
-    if file_name[0] != '/':
-        file_name = current_dir + '/' + file_name
-
-    with open(file_name, 'r') as csvfile:
-        spamreader = csv.DictReader(csvfile)
-        for idx, row in enumerate(spamreader):
-            if rows and idx + 1 > rows:
-                # The rows limit was achieved - stop import.
-                break
-
-            if row['Population']:
-                cities = City.query.options()\
-                    .filter(City.latitude == float(row['Latitude']))\
-                    .filter(City.longitude == float(row['Longitude']))\
-                    .all()
-
-                for city in cities:
-                    city_names = [c.name.lower() for c in city.city_names]
-                    if row['City'].lower() in city_names:
-                        city.population = int(row['Population'])
-                        city.save()
-
-                        print(idx, row['City'], row['Country'], 'population',
-                              row['Population'])
+def import_all():
+    import_cities()
+    import_populations()
+    import_airlines()
+    import_neo_airports()
+    import_neo_routes()
 
 
 if __name__ == "__main__":
