@@ -130,9 +130,8 @@ $(document).ready(function () {
             $.ajax({
                 url: '/ajax/routes?' + form_data,
                 type: 'GET',
-                dataType: 'json'
-            })
-                .success(function (data, textStatus, jqXHR) {
+                dataType: 'json',
+                success: function (data, textStatus, jqXHR) {
                     $js_routes.append('<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>');
                     $js_routes.children('.close').click(function (event) {
                         $js_routes.empty();
@@ -168,10 +167,11 @@ $(document).ready(function () {
                     } else {
                         $js_routes.append('<h4>No Routes</h4>');
                     }
-                })
-                .complete(function (data, textStatus, jqXHR) {
+                },
+                complete: function (data, textStatus, jqXHR) {
                     $('#find-tickets [type="submit"] i').hide();
-                });
+                }
+            });
             /*jslint unparam: false*/
         } else {
             $('#find-tickets [type="submit"] i').hide();

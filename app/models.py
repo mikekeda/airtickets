@@ -92,7 +92,7 @@ class NeoRoute(StructuredRel):
 
         for raw_item in raw_data:
             item = {
-                'nodes': [node.properties for node in raw_item[0].nodes],
+                'nodes': [node._properties for node in raw_item[0].nodes],
                 'total_distance': raw_item[1]
             }
 
@@ -144,7 +144,7 @@ class NeoAirport(StructuredNode, PointMixin):
         result = []
 
         for raw_item in raw_data:
-            item = raw_item[0].properties
+            item = raw_item[0]._properties
             item['id'] = raw_item[0].id
             item['distance'] = raw_item[1]
 

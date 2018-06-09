@@ -112,9 +112,8 @@ function processCitySelect(suggestion, el, find_closest_city) {
     $.ajax({
         url: '/ajax/airports?lat=' + suggestion.data.lat + '&lng=' + suggestion.data.lng + '&limit=' + 5 + '&find_closest_city=' + find_closest_city,
         type: 'GET',
-        dataType: 'json'
-    })
-        .success(function (data, textStatus, jqXHR) {
+        dataType: 'json',
+        success: function (data, textStatus, jqXHR) {
             $(el).siblings('select').slideDown().find('option').remove();
             for (i = 0; i < data.airports.length; i += 1) {
                 airport_name = data.airports[i].name || data.airports[i].airport_name;
@@ -125,7 +124,8 @@ function processCitySelect(suggestion, el, find_closest_city) {
                 $(el).val(data.closest_city.value);
                 addMarker(data.closest_city.value, data.closest_city.data.lat, data.closest_city.data.lng);
             }
-        });
+        }
+    });
     /*jslint unparam: false*/
 
     if (!find_closest_city && isLocationFree([suggestion.data.lat, suggestion.data.lng])) {
@@ -372,9 +372,8 @@ function initMap() {
                     'sw_lng': circle.getBounds().getSouthWest().lng(),
                     'sw_lat': circle.getBounds().getSouthWest().lat()
                 },
-                dataType: 'json'
-            })
-                .success(function (data, textStatus, jqXHR) {
+                dataType: 'json',
+                success: function (data, textStatus, jqXHR) {
                     var i;
                     for (i = 0; i < data.json_list.length; i += 1) {
                         addMarker(
@@ -387,7 +386,8 @@ function initMap() {
                         circle.setMap(null);
                         circle = null;
                     }
-                });
+                }
+            });
             /*jslint unparam: false*/
 
         }, 2000);
