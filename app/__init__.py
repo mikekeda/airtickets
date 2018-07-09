@@ -1,7 +1,6 @@
 from flask import Flask, url_for
 from flask_debugtoolbar import DebugToolbarExtension
 from flask_sqlalchemy import SQLAlchemy
-from flask_cache import Cache
 from flask_redis import FlaskRedis
 from flask_elasticsearch import FlaskElasticsearch
 from sqlalchemy import create_engine
@@ -17,7 +16,6 @@ db = SQLAlchemy(app)
 es = FlaskElasticsearch(app)
 redis_store = FlaskRedis(app)
 engine = create_engine(app.config['SQLALCHEMY_DATABASE_URI'], echo=False)
-cache = Cache(app, config={'CACHE_TYPE': 'simple'})
 
 toolbar = DebugToolbarExtension(app)
 

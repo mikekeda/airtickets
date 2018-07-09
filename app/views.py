@@ -9,7 +9,7 @@ from flask import render_template, jsonify, request
 from sqlalchemy.orm import joinedload
 from redis.exceptions import ConnectionError as RedisConnectionError
 
-from app import app, cache, redis_store, es
+from app import app, redis_store, es
 from .models import City, CityName, NeoAirport, NeoRoute
 
 BASE_TEMPLATES_DIR = os.path.dirname(os.path.abspath(__file__)) + '/templates'
@@ -43,7 +43,6 @@ def technologies():
     return render_template('technologies.html')
 
 
-@cache.cached(timeout=86400)
 @app.route('/ajax/autocomplete/cities')
 def autocomplete_cities():
     """ Autocomplete for cities. """
@@ -109,7 +108,6 @@ def autocomplete_cities():
     return jsonify(suggestions=result)
 
 
-@cache.cached(timeout=86400)
 @app.route('/ajax/airports')
 def airports():
     """ Find closest airports. """
@@ -182,7 +180,6 @@ def airports():
     return jsonify(result)
 
 
-@cache.cached(timeout=86400)
 @app.route('/ajax/routes')
 def routes():
     """ Find routes between two airports. """
@@ -207,7 +204,6 @@ def routes():
     return jsonify(routes=result)
 
 
-@cache.cached(timeout=300)  # is it work for json?
 @app.route('/ajax/get-cities')
 def get_cities():
     """ Get cities in specified area. """
