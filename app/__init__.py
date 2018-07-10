@@ -1,9 +1,10 @@
+import logging
+from sqlalchemy import create_engine
 from flask import Flask, url_for
 from flask_debugtoolbar import DebugToolbarExtension
 from flask_sqlalchemy import SQLAlchemy
 from flask_redis import FlaskRedis
 from flask_elasticsearch import FlaskElasticsearch
-from sqlalchemy import create_engine
 
 from app.config import get_env_var, DefaultConfig, TestConfig
 
@@ -25,5 +26,9 @@ app.jinja_env.globals['static'] = (
 )
 
 db.init_app(app)
+
+# Disable elasticsearch warnings.
+logger = logging.getLogger("elasticsearch")
+logger.setLevel(logging.ERROR)
 
 from app import views
