@@ -15,7 +15,7 @@ def _deg2rad(deg):
     return deg * (math.pi / 180)
 
 
-class PointMixin(object):
+class PointMixin:
     @staticmethod
     def get_distance(lat1, lon1, lat2, lon2):
         """ Get distance between two points. """
@@ -31,7 +31,7 @@ class PointMixin(object):
         return distance
 
 
-class ModelMixin(object):
+class ModelMixin:
     def save(self, commit=True):
         """ Save. """
         db.session.add(self)

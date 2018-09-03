@@ -1,7 +1,7 @@
 /*jslint browser: true*/
 /*global google*/
 
-var map,
+let map,
     latitude,
     longitude,
     from_to_bounds = [],
@@ -9,7 +9,7 @@ var map,
 
 function isLocationFree(search) {
     "use strict";
-    var i,
+    let i,
         l = markers.length;
 
     for (i = 0; i < l; i += 1) {
@@ -29,7 +29,7 @@ function processCityClear(id) {
 function setMapFormField(field, name, lat, lng) {
     "use strict";
     if (field === 'from' || field === 'to') {
-        var selector = 'input#' + field,
+        let selector = 'input#' + field,
             bounds = new google.maps.LatLngBounds(),
             suggestion = {
                 'value': name,
@@ -54,7 +54,7 @@ function setMapFormField(field, name, lat, lng) {
 function addMarker(name, lat, lng) {
     "use strict";
     if (isLocationFree([lat, lng])) {
-        var markerImage = new google.maps.MarkerImage('/static/img/dot.png',
+        let markerImage = new google.maps.MarkerImage('/static/img/dot.png',
                 new google.maps.Size(16, 16), //size
                 null,
                 new google.maps.Point(8, 8)), // offset point
@@ -67,7 +67,7 @@ function addMarker(name, lat, lng) {
 
         google.maps.event.addListener(marker, 'mouseover', (function (marker) {
             return function () {
-                var text = name;
+                let text = name;
 
                 marker.infowindow = new google.maps.InfoWindow();
                 marker.infowindow.setContent(
@@ -103,7 +103,7 @@ function addMarker(name, lat, lng) {
 
 function processCitySelect(suggestion, el, find_closest_city) {
     "use strict";
-    var bounds = new google.maps.LatLngBounds(),
+    let bounds = new google.maps.LatLngBounds(),
         airport_name,
         string,
         i;
@@ -150,7 +150,8 @@ function processCitySelect(suggestion, el, find_closest_city) {
 /* Remove all markers from the map */
 function clearMarkers() {
     "use strict";
-    var i;
+    let i;
+
     for (i = 0; i < markers.length; i += 1) {
         markers[i].setMap(null);
     }
@@ -160,7 +161,7 @@ function clearMarkers() {
 /* Initialize google map */
 function initMap() {
     "use strict";
-    var xhr,
+    let xhr,
         timer,
         circle,
         language = window.navigator.userLanguages || window.navigator.languages,
@@ -326,7 +327,7 @@ function initMap() {
 
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(function (position) {
-            var initialLocation = new google.maps.LatLng(position.coords.latitude, position.coords.longitude),
+            let initialLocation = new google.maps.LatLng(position.coords.latitude, position.coords.longitude),
                 suggestion = {
                     data: {
                         lat: position.coords.latitude,
@@ -374,7 +375,7 @@ function initMap() {
                 },
                 dataType: 'json',
                 success: function (data, textStatus, jqXHR) {
-                    var i;
+                    let i;
                     for (i = 0; i < data.json_list.length; i += 1) {
                         addMarker(
                             data.json_list[i].city_names[0].toString(),

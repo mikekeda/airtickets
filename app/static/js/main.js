@@ -5,7 +5,7 @@ $(document).ready(function () {
     "use strict";
 
     function set_active_link(link) {
-        var a_selector = 'a[href="' + link + '"]',
+        let a_selector = 'a[href="' + link + '"]',
             $link = $(a_selector);
         $('li.active > a').parent().removeClass('active');
         $link.parent('li').addClass('active');
@@ -17,7 +17,7 @@ $(document).ready(function () {
     $(document).on('click', 'a.ajax-link', function (event) {
         event.preventDefault();
         if (!$(this).parent('li').hasClass("active")) {
-            var $link = $(this);
+            let $link = $(this);
             $.ajax({
                 url: $link.attr("href") !== '/' ? '/ajax' + $link.attr("href") : '/ajax',
                 dataType: 'html'
@@ -66,7 +66,7 @@ $(document).ready(function () {
     }).trigger('change');
 
     $('.has-clear .form-control-clear').on('click', function () {
-        var $input = $(this).parents('.form-group').find('input');
+        let $input = $(this).parents('.form-group').find('input');
 
         $input.val('').trigger('change');
 
@@ -113,7 +113,7 @@ $(document).ready(function () {
     });
 
     $('form#find-tickets').submit(function (event) {
-        var i,
+        let i,
             j,
             k,
             s,
@@ -181,7 +181,7 @@ $(document).ready(function () {
     /* Process route hover (show the route on the map) */
     $('#js-routes').on({
         mouseenter: function () {
-            var flightPath = new google.maps.Polyline({
+            let flightPath = new google.maps.Polyline({
                     path: $(this).data('route'),
                     geodesic: true,
                     strokeColor: '#FF0000',
