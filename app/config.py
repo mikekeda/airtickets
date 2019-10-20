@@ -14,14 +14,14 @@ def get_env_var(name, default=''):
         if res:
             # Check env variable (Jenkins build).
             return res
-        else:
-            res = requests.get(
-                'http://metadata.google.internal/computeMetadata/'
-                'v1/instance/attributes/{}'.format(name),
-                headers={'Metadata-Flavor': 'Google'}
-            )
-            if res.status_code == 200:
-                return res.text
+
+        res = requests.get(
+            'http://metadata.google.internal/computeMetadata/'
+            'v1/instance/attributes/{}'.format(name),
+            headers={'Metadata-Flavor': 'Google'}
+        )
+        if res.status_code == 200:
+            return res.text
     except requests.exceptions.ConnectionError:
         return default
     return default

@@ -10,7 +10,7 @@ from sqlalchemy.orm import joinedload
 from redis.exceptions import ConnectionError as RedisConnectionError
 
 from app import app, redis_store, es
-from .models import City, CityName, NeoAirport, NeoRoute
+from app.models import City, CityName, NeoAirport, NeoRoute
 
 BASE_TEMPLATES_DIR = os.path.dirname(os.path.abspath(__file__)) + '/templates'
 
