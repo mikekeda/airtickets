@@ -83,7 +83,7 @@ $(document).ready(function () {
     /*jslint unparam: true*/
     $('input.ajax-autocomplete').each(function (index, el) {
         $(el).autocomplete({
-            deferRequestBy: 150,
+            deferRequestBy: 300,
             serviceUrl: '/ajax/autocomplete/' + $(el).data('autocomplete-name'),
             onSearchStart: function (query) {
                 $(el).siblings('.glyphicon-refresh').show();
@@ -131,7 +131,7 @@ $(document).ready(function () {
                 url: '/ajax/routes?' + form_data,
                 type: 'GET',
                 dataType: 'json',
-                success: function (data, textStatus, jqXHR) {
+                success: function (data) {
                     $js_routes.append('<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>');
                     $js_routes.children('.close').click(function (event) {
                         $js_routes.empty();
@@ -146,8 +146,8 @@ $(document).ready(function () {
                                     $li.data('route', []);
                                     for (j = 0; j < data.routes[i][k].nodes.length; j += 1) {
                                         $li.data('route').push({
-                                            lat: parseFloat(data.routes[i][k].nodes[j].latitude),
-                                            lng: parseFloat(data.routes[i][k].nodes[j].longitude)
+                                            lat: parseFloat(data.routes[i][k].nodes[j].location[1]),
+                                            lng: parseFloat(data.routes[i][k].nodes[j].location[0])
                                         });
                                         s = '<span>' + data.routes[i][k].nodes[j].airport_name + '</span>';
                                         if (j < data.routes[i][k].nodes.length - 1) {

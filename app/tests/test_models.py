@@ -2,8 +2,7 @@
 # -*- coding: utf-8 -*-
 import math
 
-from app.models import (_deg2rad, PointMixin, City, LanguageScript, CityName,
-                        Airline)
+from app.models import _deg2rad, City, LanguageScript, CityName, Airline, get_distance
 from app.tests import BaseTestCase
 from manage import import_cities, import_airlines, import_populations
 
@@ -13,8 +12,8 @@ class AirticketsModelsTest(BaseTestCase):
     def test_deg2rad(self):
         self.assertEqual(_deg2rad(180), math.pi)
 
-    def test_PointMixin(self):
-        dist = PointMixin.get_distance(50.433333, 30.516667, 52.25, 21)
+    def test_get_distance(self):
+        dist = get_distance(50.433333, 30.516667, 52.25, 21)
         self.assertEqual(round(dist, 12), 690.616317346638)
 
     def test_commands_import_cities(self):
@@ -125,8 +124,7 @@ class AirticketsModelsTest(BaseTestCase):
         city.save()
         lang = LanguageScript(language_script='latin')
         lang.save()
-        CityName(language_script_id=lang.id, city_id=city.id,
-                 name='Abu dhabi').save()
+        CityName(language_script_id=lang.id, city_id=city.id, name='Abu dhabi').save()
 
         import_populations(rows=10)
         assert City.query.filter_by(latitude=24.466667, longitude=54.366667,

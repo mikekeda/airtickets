@@ -4,21 +4,19 @@
 """
 import csv
 import os
-import json
-import requests
 
 from flask_script import Manager, Server
 from flask_migrate import Migrate, MigrateCommand
 from sqlalchemy.orm import joinedload
 from sqlalchemy import func
-from neomodel import db as neomodel_db
+from neomodel.contrib.spatial_properties import NeomodelPoint
 from elasticsearch import helpers
 from elasticsearch.exceptions import (
     NotFoundError, ConnectionError as ElasticConnectionError
 )
 
-from app import app, db, es
-from app.models import City, LanguageScript, CityName, Airline, NeoAirport
+from app import app, db, es, redis_store
+from app.models import City, LanguageScript, CityName, Airline, NeoAirport, get_distance
 
 
 current_dir = os.path.dirname(os.path.realpath(__file__))
@@ -141,28 +139,9 @@ def import_neo_airports(file_name='csv_data/airports.csv'):
     if file_name[0] != '/':
         file_name = current_dir + '/' + file_name
 
-    url = "http://{}:7474/db/data/ext/SpatialPlugin/" \
-          "graphdb/addSimplePointLayer".format(
-              app.config['NEO4J_DATABASE_HOST']
-          )
-    payload = {
-        "layer": "geom",
-        "lat": "latitude",
-        "lon": "longitude"
-    }
-    requests.post(
-        url,
-        data=json.dumps(payload),
-        headers=headers,
-        auth=(
-            app.config['NEO4J_DATABASE_USER'],
-            app.config['NEO4J_DATABASE_PASSWORD']
-        )
-    )
-
     with open(file_name, 'r') as csvfile:
-        spamreader = csv.DictReader(csvfile)
-        for idx, row in enumerate(spamreader):
+        csvreader = csv.DictReader(csvfile)
+        for idx, row in enumerate(csvreader):
             # create Airport.
             airport = NeoAirport(
                 airport_name=row['Name'],
@@ -170,9 +149,7 @@ def import_neo_airports(file_name='csv_data/airports.csv'):
                 country=row['Country'],
                 iata_faa=row['IATA/FAA'],
                 icao=row['ICAO'],
-                latitude=row['Latitude'],
-                longitude=row['Longitude'],
-                altitude=row['Altitude'],
+                location=NeomodelPoint(latitude=row['Latitude'], longitude=row['Longitude'], height=row['Altitude']),
                 timezone=row['Timezone'],
                 dst=row['DST'],
                 tz_database_time_zone=row['Tz database time zone'],
@@ -180,11 +157,6 @@ def import_neo_airports(file_name='csv_data/airports.csv'):
             airport.save()
 
             print(idx, airport.airport_name)
-
-        # Add node to geom index.
-        query = "match (t:NeoAirport) with t call spatial.addNode('geom',t) " \
-                "YIELD node return count(*)"
-        neomodel_db.cypher_query(query)
 
 
 @manager.command
@@ -194,35 +166,28 @@ def import_neo_routes(file_name='csv_data/routes.csv'):
         file_name = current_dir + '/' + file_name
 
     with open(file_name, 'r') as csvfile:
-        spamreader = csv.DictReader(csvfile)
-        for idx, row in enumerate(spamreader):
+        csvreader = csv.DictReader(csvfile)
+        for idx, row in enumerate(csvreader):
 
-            if not all([row['Source airport'], row['Destination airport'],
-                        row['Airline']]):
+            if not all([row['Source airport'], row['Destination airport'], row['Airline']]):
                 print('incorrect row')
                 continue
 
-            airline = Airline.query.filter(
-                Airline.iata == row['Airline']
-            ).first()
+            airline = Airline.query.filter(Airline.iata == row['Airline']).first()
             if not airline:
                 print('no airline', row['Airline'])
                 continue
 
             try:
                 # pylint: disable=E1101
-                source_airport = NeoAirport.nodes.get(
-                    iata_faa=row['Source airport']
-                )
+                source_airport = NeoAirport.nodes.get(iata_faa=row['Source airport'])
             except NeoAirport.DoesNotExist:
                 print('no source_airport', row['Source airport'])
                 continue
 
             try:
                 # pylint: disable=E1101
-                destination_airport = NeoAirport.nodes.get(
-                    iata_faa=row['Destination airport']
-                )
+                destination_airport = NeoAirport.nodes.get(iata_faa=row['Destination airport'])
             except NeoAirport.DoesNotExist:
                 print('no destination_airport', row['Destination airport'])
                 continue
@@ -232,11 +197,11 @@ def import_neo_routes(file_name='csv_data/routes.csv'):
                 destination_airport
             )
             route.airline = int(airline.id)
-            route.distance = NeoAirport.get_distance(
-                source_airport.latitude,
-                source_airport.longitude,
-                destination_airport.latitude,
-                destination_airport.longitude,
+            route.distance = get_distance(
+                source_airport.location.latitude,
+                source_airport.location.longitude,
+                destination_airport.location.latitude,
+                destination_airport.location.longitude,
             )
             route.codeshare = row['Codeshare'] == 'Y'
             route.equipment = row['Equipment']
@@ -287,8 +252,8 @@ def create_cities_index():
 
     try:
         es.indices.delete(index="airtickets-city-index")
-    except (ElasticConnectionError, NotFoundError):
-        pass
+    except (ElasticConnectionError, NotFoundError, AttributeError):
+        return
     es.indices.create(index='airtickets-city-index', body=index_body)
 
     num_of_items = CityName.query.count()
@@ -311,6 +276,11 @@ def import_all():
     import_airlines()
     import_neo_airports()
     import_neo_routes()
+
+
+@manager.command
+def cleanup_redis():
+    redis_store.flushall()
 
 
 if __name__ == "__main__":

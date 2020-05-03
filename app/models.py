@@ -2,33 +2,31 @@ import math
 import time
 
 from sqlalchemy.sql import text
-from neomodel import (StructuredNode, StructuredRel, StringProperty,
-                      IntegerProperty, FloatProperty, BooleanProperty,
-                      RelationshipTo)
-from neomodel import db as neomodel_db
+from neomodel import (db as neomodel_db, StructuredNode, StructuredRel, StringProperty, IntegerProperty, FloatProperty,
+                      BooleanProperty, RelationshipTo)
+from neomodel.contrib.spatial_properties import PointProperty
 
 from app import db, engine
 
 
-def _deg2rad(deg):
+def _deg2rad(deg: float) -> float:
     """ Helper function that convert degrees to radians. """
     return deg * (math.pi / 180)
 
 
-class PointMixin:
-    @staticmethod
-    def get_distance(lat1, lon1, lat2, lon2):
-        """ Get distance between two points. """
-        radius = 6371  # Radius of the earth in km
-        d_lat = _deg2rad(lat2 - lat1)
-        d_lon = _deg2rad(lon2 - lon1)
-        dummy_a = math.sin(d_lat / 2) * math.sin(d_lat / 2) + \
-            math.cos(_deg2rad(lat1)) * \
-            math.cos(_deg2rad(lat2)) * \
-            math.sin(d_lon / 2) * math.sin(d_lon / 2)
-        dummy_c = 2 * math.atan2(math.sqrt(dummy_a), math.sqrt(1 - dummy_a))
-        distance = radius * dummy_c  # Distance in km
-        return distance
+def get_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    """ Get distance between two points. """
+    radius = 6371  # Radius of the earth in km
+    d_lat = _deg2rad(lat2 - lat1)
+    d_lon = _deg2rad(lon2 - lon1)
+    dummy_a = math.sin(d_lat / 2) * math.sin(d_lat / 2) + \
+        math.cos(_deg2rad(lat1)) * \
+        math.cos(_deg2rad(lat2)) * \
+        math.sin(d_lon / 2) * math.sin(d_lon / 2)
+    dummy_c = 2 * math.atan2(math.sqrt(dummy_a), math.sqrt(1 - dummy_a))
+    distance = radius * dummy_c  # Distance in km
+
+    return distance
 
 
 class ModelMixin:
@@ -64,27 +62,17 @@ class NeoRoute(StructuredRel):
     departure_interval = IntegerProperty(default=86400)
 
     @staticmethod
-    def get_path(from_airport, to_airport):
+    def get_path(from_airport: int, to_airport: int, limit: int = 20) -> dict:
         """ Get path from source_airport to destination_airport. """
 
-        query = (
-            "MATCH p=(startNode:NeoAirport)-[rels:{rel_type}*1..3]->"
-            "(endNode:NeoAirport) "
-            "WHERE id(startNode) = {from_airport} "
-            "AND id(endNode) = {to_airport} "
-            "RETURN p AS p, reduce(distance=0, r in rels | "
-            "distance + r.distance) AS totalDistance "
-            "ORDER BY totalDistance "
-            "LIMIT 20"
-        )
-
-        query_data = {
-            'from_airport': from_airport,
-            'rel_type': 'AVAILABLE_DESTINATION',
-            'to_airport': to_airport
-        }
-
-        query = query.format(**query_data)
+        query = f"""
+            MATCH p=(startNode:NeoAirport)-[rels:AVAILABLE_DESTINATION*1..3]->(endNode:NeoAirport)
+            WHERE id(startNode) = {from_airport}
+            AND id(endNode) = {to_airport}
+            RETURN p AS p, reduce(distance=0, r in rels | distance + r.distance) AS totalDistance
+            ORDER BY totalDistance
+            LIMIT {limit}
+        """
 
         raw_data, _ = neomodel_db.cypher_query(query)
 
@@ -101,21 +89,17 @@ class NeoRoute(StructuredRel):
         return result
 
 
-class NeoAirport(StructuredNode, PointMixin):
+class NeoAirport(StructuredNode):
     airport_name = StringProperty()
     city = StringProperty()
     country = StringProperty()
     iata_faa = StringProperty(index=True)
     icao = StringProperty(index=True)
-    latitude = FloatProperty()
-    longitude = FloatProperty()
-    altitude = FloatProperty()
+    location = PointProperty(crs='wgs-84-3d')
     timezone = FloatProperty()
     dst = StringProperty()
     tz_database_time_zone = StringProperty()
-    available_destinations = RelationshipTo(
-        'NeoAirport', 'AVAILABLE_DESTINATION', model=NeoRoute
-    )
+    available_destinations = RelationshipTo('NeoAirport', 'AVAILABLE_DESTINATION', model=NeoRoute)
 
     @classmethod
     def category(cls):
@@ -123,22 +107,18 @@ class NeoAirport(StructuredNode, PointMixin):
         return "{}.nodes attribute".format(cls.__name__)
 
     @staticmethod
-    def get_closest_airports(lat, lng, limit=1, distance=500, offset=0):
+    def get_closest_airports(lat: float, lng: float, limit: int = 1):
         """ Get closest airports by coordinates. """
-        query = ("CALL spatial.withinDistance('geom',{{latitude: {lat},"
-                 "longitude: {lng}}}, {distance}) yield node, distance "
-                 "RETURN DISTINCT node, distance "
-                 "LIMIT {limit}")
 
-        query_data = {
-            'lat': lat,
-            'lng': lng,
-            'distance': float(distance),
-            'offset': offset,
-            'limit': limit
-        }
+        query = f"""
+        MATCH (c1:NeoAirport)
+        WITH c1, distance(
+            c1.location,
+            point({{ latitude: {lat}, longitude: {lng}, height: 0, crs: 'wgs-84-3d' }})
+        ) as dist
+        RETURN c1, dist ORDER BY dist ASC LIMIT {limit};
+        """
 
-        query = query.format(**query_data)
         raw_data, _ = neomodel_db.cypher_query(query)
 
         result = []
@@ -237,20 +217,16 @@ class LanguageScript(db.Model, ModelMixin):
 class CityName(db.Model, ModelMixin):
     __tablename__ = 'cityname'
     name = db.Column(db.String(128))
-    language_script_id = db.Column(
-        db.Integer,
-        db.ForeignKey('languagescript.id'),
-        primary_key=True)
+    language_script_id = db.Column(db.Integer, db.ForeignKey('languagescript.id'), primary_key=True)
     city_id = db.Column(db.Integer, db.ForeignKey('city.id'), primary_key=True)
     city = db.relationship('City', backref=db.backref('city'))
 
     def serialize(self):
         """ Serialize. """
-        result = {
+        return {
             'name': self.name,
             'city_id': self.city_id,
         }
-        return result
 
     def autocomplete_serialize(self):
         """ Serialize for autocomplete. """
@@ -294,7 +270,7 @@ class Airline(db.Model, ModelMixin):
 
     def serialize(self):
         """ Serialize. """
-        result = {
+        return {
             'id': self.id,
             'name': self.name,
             'alias': self.alias,
@@ -304,7 +280,6 @@ class Airline(db.Model, ModelMixin):
             'country': self.country,
             'active': self.active,
         }
-        return result
 
 
 db.create_all()

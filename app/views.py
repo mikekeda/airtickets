@@ -10,7 +10,7 @@ from sqlalchemy.orm import joinedload
 from redis.exceptions import ConnectionError as RedisConnectionError
 
 from app import app, redis_store, es
-from app.models import City, CityName, NeoAirport, NeoRoute
+from app.models import City, CityName, NeoAirport, NeoRoute, get_distance
 
 BASE_TEMPLATES_DIR = os.path.dirname(os.path.abspath(__file__)) + '/templates'
 
@@ -89,11 +89,12 @@ def autocomplete_cities():
             city['_source']
             for city in cities['hits']['hits']
         ]
-    except (ElasticConnectionError, NotFoundError):
+    except (ElasticConnectionError, NotFoundError, AttributeError):
         # Try to find with PostgreSQL.
         cities = CityName.query.join(CityName.city)\
             .filter(CityName.name.like(query + '%'))\
-            .order_by(City.population.desc())\
+            .distinct(City.population, CityName.city_id)\
+            .order_by(City.population.desc(), CityName.city_id)\
             .limit(10)\
             .all()
 
@@ -168,7 +169,7 @@ def airports():
                 }
             )
             result['closest_city'] = cities['hits']['hits'][0]['_source']
-        except (ElasticConnectionError, NotFoundError):
+        except (ElasticConnectionError, NotFoundError, AttributeError):
             result['closest_city'] = next(
                 iter(City.get_closest_cities(lat, lng, 1) or []),
                 None
@@ -237,7 +238,7 @@ def get_cities():
                     "bool": {
                         "must": {
                             "geo_distance": {
-                                "distance": str(NeoAirport.get_distance(
+                                "distance": str(get_distance(
                                     ne_lat, ne_lng, sw_lat, sw_lng
                                 ) / 2 / math.sqrt(2)) + 'km',
                                 "location": {
@@ -256,13 +257,16 @@ def get_cities():
             }
         )
 
-        result = [{
-            'city_names': [city['_source']['value']],
-            'latitude': city['_source']['data']['lat'],
-            'longitude': city['_source']['data']['lng'],
-            'population': city['_source']['population']
-        } for city in cities['hits']['hits']]
-    except (ElasticConnectionError, NotFoundError):
+        result = [
+            {
+                'city_names': [city['_source']['value']],
+                'latitude': city['_source']['data']['lat'],
+                'longitude': city['_source']['data']['lng'],
+                'population': city['_source']['population']
+            }
+            for city in cities['hits']['hits']
+        ]
+    except (ElasticConnectionError, NotFoundError, AttributeError):
         # Try to find with PostgreSQL.
         cities = City.query.options(joinedload(City.city_names))\
                      .filter(City.longitude < ne_lng)\

@@ -15,6 +15,10 @@ else:
     app.config.from_object(DefaultConfig)
 db = SQLAlchemy(app)
 es = FlaskElasticsearch(app)
+try:
+    es.ping()
+except TypeError:
+    es = None
 redis_store = FlaskRedis(app)
 engine = create_engine(app.config['SQLALCHEMY_DATABASE_URI'], echo=False)
 
