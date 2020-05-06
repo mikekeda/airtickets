@@ -1,7 +1,6 @@
 import logging
 from sqlalchemy import create_engine
 from flask import Flask, url_for
-from flask_debugtoolbar import DebugToolbarExtension
 from flask_sqlalchemy import SQLAlchemy
 from flask_redis import FlaskRedis
 from flask_elasticsearch import FlaskElasticsearch
@@ -13,6 +12,9 @@ if get_env_var('TESTING', False):
     app.config.from_object(TestConfig)
 else:
     app.config.from_object(DefaultConfig)
+
+app.debug = bool(get_env_var('DEBUG', 'True'))
+
 db = SQLAlchemy(app)
 es = FlaskElasticsearch(app)
 try:
@@ -22,7 +24,12 @@ except TypeError:
 redis_store = FlaskRedis(app)
 engine = create_engine(app.config['SQLALCHEMY_DATABASE_URI'], echo=False)
 
-toolbar = DebugToolbarExtension(app)
+try:
+    from flask_debugtoolbar import DebugToolbarExtension
+    toolbar = DebugToolbarExtension(app)
+except ImportError:
+    DebugToolbarExtension = None
+    toolbar = None
 
 # pylint: disable=E1101
 app.jinja_env.globals['static'] = (
