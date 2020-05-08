@@ -3,7 +3,7 @@ import pytest
 
 from app.models import _deg2rad, City, CityName, Airline, get_distance
 from app.tests import BaseTestCase
-from manage import import_cities, import_airlines, import_populations
+from manage import import_cities, import_airlines
 
 
 class AirticketsModelsTest(BaseTestCase):
@@ -115,14 +115,3 @@ class AirticketsModelsTest(BaseTestCase):
                 'active': False
             }.items()
         ])
-
-    def test_commands_import_populations(self):
-        # Prepare city, language script and city name.
-        city = City(gns_ufi=-782066, latitude=24.466667, longitude=54.366667)
-        city.save()
-
-        CityName(lang='latin', city_id=city.id, name='Abu dhabi').save()
-
-        import_populations(rows=10)
-        self.assertTrue(City.query.filter_by(latitude=24.466667, longitude=54.366667,
-                                             population=603687).first())
