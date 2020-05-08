@@ -1,8 +1,6 @@
 import os
 import requests
 
-from neomodel import config
-
 SITE_ENV_PREFIX = 'AIRTICKETS'
 
 
@@ -36,15 +34,6 @@ class DefaultConfig:
         get_env_var('DB_NAME', 'airtickets')
     )
 
-    NEO4J_DATABASE_USER = get_env_var('NEO4J_USER', 'airtickets')
-    NEO4J_DATABASE_PASSWORD = get_env_var(
-        'NEO4J_PASSWORD', '<airtickets_pass>'
-    )
-    NEO4J_DATABASE_HOST = get_env_var('NEO4J_HOST', '127.0.0.1')
-    config.DATABASE_URL = "bolt://{}:{}@{}:7687".format(
-        NEO4J_DATABASE_USER, NEO4J_DATABASE_PASSWORD, NEO4J_DATABASE_HOST
-    )
-    config.ENCRYPTED_CONNECTION = False
     REDIS_URL = "redis://:@localhost:6379/5"
 
     # the toolbar is only enabled in debug mode:

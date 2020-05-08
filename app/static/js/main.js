@@ -146,8 +146,8 @@ $(document).ready(function () {
                                     $li.data('route', []);
                                     for (j = 0; j < data.routes[i][k].nodes.length; j += 1) {
                                         $li.data('route').push({
-                                            lat: parseFloat(data.routes[i][k].nodes[j].location[1]),
-                                            lng: parseFloat(data.routes[i][k].nodes[j].location[0])
+                                            lat: parseFloat(data.routes[i][k].nodes[j].latitude),
+                                            lng: parseFloat(data.routes[i][k].nodes[j].longitude)
                                         });
                                         s = '<span>' + data.routes[i][k].nodes[j].airport_name + '</span>';
                                         if (j < data.routes[i][k].nodes.length - 1) {

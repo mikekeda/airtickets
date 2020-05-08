@@ -1,10 +1,9 @@
+from collections import defaultdict
+from functools import reduce
 import math
-import time
 
+from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.sql import text
-from neomodel import (db as neomodel_db, StructuredNode, StructuredRel, StringProperty, IntegerProperty, FloatProperty,
-                      BooleanProperty, RelationshipTo)
-from neomodel.contrib.spatial_properties import PointProperty
 
 from app import db, engine
 
@@ -16,7 +15,7 @@ def _deg2rad(deg: float) -> float:
 
 def get_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     """ Get distance between two points. """
-    radius = 6371  # Radius of the earth in km
+    radius = 6371  # radius of the earth in km
     d_lat = _deg2rad(lat2 - lat1)
     d_lon = _deg2rad(lon2 - lon1)
     dummy_a = math.sin(d_lat / 2) * math.sin(d_lat / 2) + \
@@ -24,12 +23,20 @@ def get_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
         math.cos(_deg2rad(lat2)) * \
         math.sin(d_lon / 2) * math.sin(d_lon / 2)
     dummy_c = 2 * math.atan2(math.sqrt(dummy_a), math.sqrt(1 - dummy_a))
-    distance = radius * dummy_c  # Distance in km
+    distance = radius * dummy_c  # distance in km
 
     return distance
 
 
-class ModelMixin:
+class BaseModel(db.Model):
+    __abstract__ = True
+
+    @declared_attr
+    def __tablename__(cls):
+        return cls.__name__.lower()
+
+    id = db.Column(db.Integer, primary_key=True)
+
     def save(self, commit=True):
         """ Save. """
         db.session.add(self)
@@ -53,89 +60,122 @@ class ModelMixin:
         return obj, created
 
 
-class NeoRoute(StructuredRel):
-    airline = IntegerProperty()
-    distance = FloatProperty()
-    codeshare = BooleanProperty(default=False)
-    equipment = StringProperty()
-    departure_start = IntegerProperty(default=lambda: int(time.time()))
-    departure_interval = IntegerProperty(default=86400)
+class Airport(BaseModel):
+    airport_name = db.Column(db.String(128))
+    city = db.Column(db.String(128))
+    country = db.Column(db.String(64))
+    iata_faa = db.Column(db.String(4))
+    icao = db.Column(db.String(10))
+    latitude = db.Column(db.Float)
+    longitude = db.Column(db.Float)
+    timezone = db.Column(db.Float)
+    dst = db.Column(db.String(1))
+    tz_database_time_zone = db.Column(db.String())
 
     @staticmethod
-    def get_path(from_airport: int, to_airport: int, limit: int = 20) -> dict:
-        """ Get path from source_airport to destination_airport. """
+    def get_closest_airports(lat: float, lng: float, limit: int = 1, offset: int = 0):
+        conn = engine.connect()
 
-        query = f"""
-            MATCH p=(startNode:NeoAirport)-[rels:AVAILABLE_DESTINATION*1..3]->(endNode:NeoAirport)
-            WHERE id(startNode) = {from_airport}
-            AND id(endNode) = {to_airport}
-            RETURN p AS p, reduce(distance=0, r in rels | distance + r.distance) AS totalDistance
-            ORDER BY totalDistance
-            LIMIT {limit}
-        """
+        s = text(
+            "SELECT *, "
+            "("
+            "3959 * acos( cos( radians(:latitude) ) * "
+            "cos( radians( latitude ) ) * cos( radians( longitude ) - "
+            "radians(:longitude) ) + sin( radians(:latitude) ) * "
+            "sin( radians( latitude ) ) )"
+            ") AS distance "
+            "FROM airport "
+            "ORDER BY distance "
+            "LIMIT :limit OFFSET :offset"
+        )
 
-        raw_data, _ = neomodel_db.cypher_query(query)
+        raw_data = conn.execute(s, latitude=lat, longitude=lng, limit=limit,
+                                offset=offset).fetchall()
 
-        result = {}
+        return [dict(row) for row in raw_data]
 
-        for raw_item in raw_data:
-            item = {
-                'nodes': [node._properties for node in raw_item[0].nodes],
-                'total_distance': raw_item[1]
+
+class Route(BaseModel):
+    source = db.Column(db.Integer, db.ForeignKey('airport.id'))
+    destination = db.Column(db.Integer, db.ForeignKey('airport.id'))
+    airline = db.Column(db.Integer, db.ForeignKey('airline.id'))
+    distance = db.Column(db.Float)
+    codeshare = db.Column(db.Boolean, default=False)
+    equipment = db.Column(db.String)
+
+    @staticmethod
+    def get_path(source, destination):
+        result = defaultdict(list)
+        s = text("""
+        WITH RECURSIVE search_graph(
+            source, -- point 1
+            destination, -- point 2
+            distance, -- edge property
+            depth, -- depth, starting from 1
+            path -- path, stored using an array
+        ) AS (
+        SELECT -- ROOT node query
+            g.source, -- point 1
+            g.destination, -- point 2
+            g.distance AS distance, -- edge property
+            1 AS depth, -- initial depth =1
+            ARRAY[g.source] AS path -- initial path
+        FROM route AS g
+        WHERE SOURCE = :source -- ROOT node =?
+        UNION ALL SELECT -- recursive clause
+            g.source, -- point 1
+            g.destination, -- point 2
+            g.distance + sg.distance AS distance, -- edge property
+            sg.depth + 1 AS depth, -- depth + 1
+            PATH || g.source AS PATH -- add a new point to the path
+        FROM route AS g, search_graph AS sg -- circular INNER JOIN
+        WHERE g.source = sg.destination -- recursive JOIN condition
+            AND (g.source <> ALL(sg.path))-- prevent from cycling
+            AND sg.depth <= 2 -- search depth =?
+        )
+        SELECT DISTINCT PATH || destination AS PATH,
+                                depth,
+                                distance
+        FROM search_graph -- query a recursive table. You can add LIMIT output or use a cursor
+        WHERE destination = :destination
+        ORDER BY distance
+        LIMIT 10
+        """)
+
+        conn = engine.connect()
+        raw_data = conn.execute(s, source=source, destination=destination).fetchall()
+        conn.close()
+
+        needed_cities = list(reduce(lambda a, b: a | set(b['path']), raw_data, set()))
+        airports = Airport.query.with_entities(
+            Airport.id,
+            Airport.airport_name,
+            Airport.latitude,
+            Airport.longitude,
+        ).filter(Airport.id.in_(needed_cities)).all()
+        airports = {
+            airport.id: {
+                'airport_name': airport.airport_name,
+                'latitude': airport.latitude,
+                'longitude': airport.longitude,
             }
+            for airport in airports
+        }
 
-            result.setdefault(len(raw_item[0].nodes) - 2, []).append(item)
-
-        return result
-
-
-class NeoAirport(StructuredNode):
-    airport_name = StringProperty()
-    city = StringProperty()
-    country = StringProperty()
-    iata_faa = StringProperty(index=True)
-    icao = StringProperty(index=True)
-    location = PointProperty(crs='wgs-84-3d')
-    timezone = FloatProperty()
-    dst = StringProperty()
-    tz_database_time_zone = StringProperty()
-    available_destinations = RelationshipTo('NeoAirport', 'AVAILABLE_DESTINATION', model=NeoRoute)
-
-    @classmethod
-    def category(cls):
-        """ Implement abstract method of StructuredNode. """
-        return "{}.nodes attribute".format(cls.__name__)
-
-    @staticmethod
-    def get_closest_airports(lat: float, lng: float, limit: int = 1):
-        """ Get closest airports by coordinates. """
-
-        query = f"""
-        MATCH (c1:NeoAirport)
-        WITH c1, distance(
-            c1.location,
-            point({{ latitude: {lat}, longitude: {lng}, height: 0, crs: 'wgs-84-3d' }})
-        ) as dist
-        RETURN c1, dist ORDER BY dist ASC LIMIT {limit};
-        """
-
-        raw_data, _ = neomodel_db.cypher_query(query)
-
-        result = []
-
-        for raw_item in raw_data:
-            item = raw_item[0]._properties
-            item['id'] = raw_item[0].id
-            item['distance'] = raw_item[1]
-
-            result.append(item)
+        for row in raw_data:
+            result[row['depth']].append({
+                'nodes': [airports[airport_id] for airport_id in row['path']],
+                'total_distance': row['distance'],
+            })
 
         return result
 
 
-class City(db.Model, ModelMixin):
-    __tablename__ = 'city'
-    id = db.Column(db.Integer, primary_key=True)
+class City(BaseModel):
+    __table_args__ = (
+        db.UniqueConstraint('latitude', 'longitude', name='location'),
+    )
+
     country_code = db.Column(db.String(2))
     subdivision_code = db.Column(db.String(8))
     gns_fd = db.Column(db.String(8))
@@ -144,6 +184,7 @@ class City(db.Model, ModelMixin):
     latitude = db.Column(db.Float)
     longitude = db.Column(db.Float)
     population = db.Column(db.Integer, default=0)
+
     city_names = db.relationship('CityName', backref=db.backref('city_names'))
 
     @staticmethod
@@ -166,20 +207,19 @@ class City(db.Model, ModelMixin):
             "LIMIT :limit OFFSET :offset"
         )
 
-        raw_data = conn.execute(s, latitude=lat, longitude=lng, limit=limit,
-                                offset=offset).fetchall()
+        raw_data = conn.execute(s, latitude=lat, longitude=lng, limit=limit, offset=offset).fetchall()
 
         for raw_item in raw_data:
             item = {
-                'id': raw_item[0],
-                'country_code': raw_item[1],
+                'id': raw_item['id'],
+                'country_code': raw_item['country_code'],
                 'data': {
-                    'lat': raw_item[6],
-                    'lng': raw_item[7]
+                    'lat': raw_item['latitude'],
+                    'lng': raw_item['longitude']
                 },
-                'population': raw_item[8],
-                'value': raw_item[9],
-                'distance': raw_item[12]
+                'population': raw_item['population'],
+                'value': raw_item['name'],
+                'distance': raw_item['distance']
             }
             result.append(item)
 
@@ -204,21 +244,11 @@ class City(db.Model, ModelMixin):
         return result
 
 
-class LanguageScript(db.Model, ModelMixin):
-    __tablename__ = 'languagescript'
-    id = db.Column(db.Integer, primary_key=True)
-    language_script = db.Column(db.String(32), unique=True)
-    city_names = db.relationship(
-        'CityName',
-        backref=db.backref('Languagescripts_city_names')
-    )
+class CityName(BaseModel):
+    name = db.Column(db.String(128), index=True)
+    lang = db.Column(db.String(16))
+    city_id = db.Column(db.Integer, db.ForeignKey('city.id'), nullable=False)
 
-
-class CityName(db.Model, ModelMixin):
-    __tablename__ = 'cityname'
-    name = db.Column(db.String(128))
-    language_script_id = db.Column(db.Integer, db.ForeignKey('languagescript.id'), primary_key=True)
-    city_id = db.Column(db.Integer, db.ForeignKey('city.id'), primary_key=True)
     city = db.relationship('City', backref=db.backref('city'))
 
     def serialize(self):
@@ -257,9 +287,7 @@ class CityName(db.Model, ModelMixin):
         }
 
 
-class Airline(db.Model, ModelMixin):
-    __tablename__ = 'airline'
-    id = db.Column(db.Integer, primary_key=True)
+class Airline(BaseModel):
     name = db.Column(db.String(128))
     alias = db.Column(db.String(64))
     iata = db.Column(db.String(4))

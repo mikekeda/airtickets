@@ -10,7 +10,7 @@ from sqlalchemy.orm import joinedload
 from redis.exceptions import ConnectionError as RedisConnectionError
 
 from app import app, redis_store, es
-from app.models import City, CityName, NeoAirport, NeoRoute, get_distance
+from app.models import City, CityName, Airport, Route, get_distance
 
 BASE_TEMPLATES_DIR = os.path.dirname(os.path.abspath(__file__)) + '/templates'
 
@@ -91,7 +91,7 @@ def autocomplete_cities():
         ]
     except (ElasticConnectionError, NotFoundError, AttributeError):
         # Try to find with PostgreSQL.
-        cities = CityName.query.join(CityName.city)\
+        cities = CityName.query.join(City.city)\
             .filter(CityName.name.like(query + '%'))\
             .distinct(City.population, CityName.city_id)\
             .order_by(City.population.desc(), CityName.city_id)\
@@ -130,7 +130,7 @@ def airports():
         redis_is_connected = False
 
     result = {
-        'airports': NeoAirport.get_closest_airports(lat, lng, limit)
+        'airports': Airport.get_closest_airports(lat, lng, limit)
     }
 
     if find_closest_city:
@@ -197,7 +197,7 @@ def routes():
     except RedisConnectionError:
         redis_is_connected = False
 
-    result = NeoRoute.get_path(from_airport, to_airport)
+    result = Route.get_path(from_airport, to_airport)
 
     if redis_is_connected:
         redis_store.set(redis_key, pickle.dumps(result), 86400)

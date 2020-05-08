@@ -1,27 +1,24 @@
-# -*- coding: utf-8 -*-
 """
-    This script provides some easy to use commands.
+This script provides some easy to use commands.
 """
 import csv
+from collections import defaultdict
+from functools import wraps
 import os
+from time import time
 
 from flask_script import Manager, Server
 from flask_migrate import Migrate, MigrateCommand
 from sqlalchemy.orm import joinedload
-from sqlalchemy import func
-from neomodel.contrib.spatial_properties import NeomodelPoint
 from elasticsearch import helpers
-from elasticsearch.exceptions import (
-    NotFoundError, ConnectionError as ElasticConnectionError
-)
+from elasticsearch.exceptions import NotFoundError, ConnectionError as ElasticConnectionError
 
 from app import app, db, es, redis_store
-from app.models import City, LanguageScript, CityName, Airline, NeoAirport, get_distance
+from app.models import City, CityName, Airline, Airport, Route, get_distance
 
 
 current_dir = os.path.dirname(os.path.realpath(__file__))
-chunk_size = 100
-headers = {'content-type': 'application/json'}
+chunk_size = 1000
 
 manager = Manager(app)
 migrate = Migrate(app, db)
@@ -32,92 +29,144 @@ manager.add_command("runserver", Server("localhost", port=5000))
 manager.add_command('db', MigrateCommand)
 
 
+def timeit(f):
+    @wraps(f)
+    def wrap(*args, **kw):
+        ts = time()
+        result = f(*args, **kw)
+        te = time()
+        print('func:%r args:[%r, %r] took: %2.4f sec' % (f.__name__, args, kw, te-ts))
+        return result
+    return wrap
+
+
 @manager.command
+@timeit
 def import_cities(file_name='csv_data/worldcities.csv', rows=None):
     """ Import cities. """
+    city_cache = {}
+    populations_cache = defaultdict(list)
+    _cityname_cache = defaultdict(list)
+
     if file_name[0] != '/':
         file_name = current_dir + '/' + file_name
 
+    # Populate cityname_cache.
+    print('Populate cityname_cache...')
     with open(file_name, 'r') as csvfile:
-        spamreader = csv.DictReader(csvfile)
-        for idx, row in enumerate(spamreader):
+        for idx, row in enumerate(csv.DictReader(csvfile)):
             if rows and idx + 1 > rows:
-                # The rows limit was achieved - stop import.
-                break
+                break  # the rows limit was achieved - stop import
 
-            # Create a LanguageScript.
-            lang, _ = LanguageScript.get_or_create(
-                language_script=row[' language script']
-            )
+            location = (float(row[' latitude']), float(row[' longitude']))
+            _cityname_cache[location].append(row[' name'].lower())
 
-            # Create a City.
-            city, _ = City.get_or_create(
-                gns_ufi=row[' GNS UFI'] or 0,
-                defaults={
-                    'latitude': row[' latitude'],
-                    'longitude': row[' longitude'],
-                    'country_code': row['ISO 3166-1 country code'],
-                    'subdivision_code': row[' FIPS 5-2 subdivision code'],
-                    'gns_fd': row[' GNS FD'],
-                    'language_code': row[' ISO 639-1 language code'],
-                }
-            )
+        cityname_cache = defaultdict(list)
+        for location, names in _cityname_cache.items():
+            for name in names:
+                cityname_cache[name].extend([{'name': n, 'location': location} for n in names])
 
-            # Create a CityName.
-            CityName.get_or_create(
-                language_script_id=lang.id,
-                city_id=city.id,
-                defaults={'name': row[' name']}
-            )
-
-            print(idx, row[' name'])
-
-
-@manager.command
-def import_populations(file_name='csv_data/cities-populations.csv', rows=None):
-    """ Import populations. """
-    if file_name[0] != '/':
-        file_name = current_dir + '/' + file_name
-
-    with open(file_name, 'r') as csvfile:
-        spamreader = csv.DictReader(csvfile)
-        for idx, row in enumerate(spamreader):
+    # Populate populations_cache.
+    print('Populate populations_cache...')
+    with open(current_dir + '/csv_data/cities-populations.csv', 'r') as csvfile:
+        csvreader = csv.DictReader(csvfile)
+        for idx, row in enumerate(csvreader):
             if rows and idx + 1 > rows:
-                # The rows limit was achieved - stop import.
-                break
+                break  # the rows limit was achieved - stop import
 
             if row['Population']:
-                cities = City.query.options().filter(
-                    func.abs(City.latitude - float(row['Latitude'])) < 0.0005
-                ).filter(
-                    func.abs(City.longitude - float(row['Longitude'])) < 0.0005
-                ).all()
+                location = (float(row['Latitude']), float(row['Longitude']))
+                for city in cityname_cache[row['City'].lower()]:
+                    if abs(city['location'][0] - location[0]) < 0.03 and abs(city['location'][1] - location[1]) < 0.03:
+                        populations_cache[city['name']].append({
+                            'latitude': float(row['Latitude']),
+                            'longitude': float(row['Longitude']),
+                            'country_code': row['Country'].upper(),
+                            'population': int(row['Population']),
+                        })
 
-                for city in cities:
-                    city_names = [c.name.lower() for c in city.city_names]
-                    if row['City'].lower() in city_names:
-                        city.population = int(row['Population'])
-                        city.save()
+    # Create a City.
+    with open(file_name, 'r') as csvfile:
+        basket = []
+        for idx, row in enumerate(csv.DictReader(csvfile)):
+            if rows and idx + 1 > rows:
+                break  # the rows limit was achieved - stop import
 
-                        print(idx, row['City'], row['Country'], 'population',
-                              row['Population'])
+            location = (float(row[' latitude']), float(row[' longitude']))
+            if location not in city_cache:
+                population = [
+                    p['population']
+                    for p in populations_cache[row[' name'].lower()]
+                    if all([
+                        p['country_code'] == row['ISO 3166-1 country code'].upper(),
+                        abs(p['latitude'] - location[0]) < 0.03,
+                        abs(p['longitude'] - location[1]) < 0.03,
+                    ])
+                ]
+                population = population[0] if population else 0
+
+                basket.append(City(
+                    gns_ufi=row[' GNS UFI'] or 0,
+                    latitude=location[0],
+                    longitude=location[1],
+                    country_code=row['ISO 3166-1 country code'],
+                    subdivision_code=row[' FIPS 5-2 subdivision code'],
+                    gns_fd=row[' GNS FD'],
+                    language_code=row[' ISO 639-1 language code'],
+                    population=population,
+                ))
+                city_cache[location] = None  # avoid adding same cities to database
+                if len(basket) >= chunk_size:
+                    db.session.bulk_save_objects(basket, return_defaults=True)  # we need to return ids
+                    db.session.commit()  # save chunk
+
+                    city_cache.update({(c.latitude, c.longitude): c.id for c in basket})  # set cache
+
+                    basket = []  # empty basket
+
+                print(idx, row[' name'], '(create City)')
+
+        db.session.commit()  # save last chunk
+
+    # Create a CityName.
+    with open(file_name, 'r') as csvfile:
+        basket = []
+        for idx, row in enumerate(csv.DictReader(csvfile)):
+            if rows and idx + 1 > rows:
+                break  # the rows limit was achieved - stop import
+
+            location = (float(row[' latitude']), float(row[' longitude']))
+
+            basket.append(CityName(
+                lang=row[' language script'],
+                city_id=city_cache[location],
+                name=row[' name']
+            ))
+            if len(basket) >= chunk_size:
+                db.session.bulk_save_objects(basket)
+                db.session.commit()  # save chunk
+                basket = []  # empty basket
+
+            print(idx, row[' name'], '(create CityName)')
+
+        db.session.commit()  # save last chunk
 
 
 @manager.command
+@timeit
 def import_airlines(file_name='csv_data/airlines.csv', rows=None):
-    airline = None
     if file_name[0] != '/':
         file_name = current_dir + '/' + file_name
 
     with open(file_name, 'r') as csvfile:
-        spamreader = csv.DictReader(csvfile)
-        for idx, row in enumerate(spamreader):
+        csvreader = csv.DictReader(csvfile)
+        for idx, row in enumerate(csvreader):
             if rows and idx + 1 > rows:
                 # The rows limit was achieved - stop import.
                 break
 
             # Create Airline.
-            airline, _ = Airline.get_or_create(
+            airline = Airline(
                 name=row['Name'],
                 alias=row['Alias'],
                 iata=row['IATA'],
@@ -125,43 +174,48 @@ def import_airlines(file_name='csv_data/airlines.csv', rows=None):
                 callsign=row['Callsign'],
                 country=row['Country'],
                 active=row['Active'] == 'Y',
-                commit=(idx % chunk_size == 0)
-            )
+            ).save(idx % chunk_size == 0)
 
             print(idx, airline.name)
 
-        # Save last chunk.
-        airline.save()
+        db.session.commit()  # save last chunk
 
 
 @manager.command
-def import_neo_airports(file_name='csv_data/airports.csv'):
+@timeit
+def import_airports(file_name='csv_data/airports.csv'):
     if file_name[0] != '/':
         file_name = current_dir + '/' + file_name
 
     with open(file_name, 'r') as csvfile:
         csvreader = csv.DictReader(csvfile)
         for idx, row in enumerate(csvreader):
-            # create Airport.
-            airport = NeoAirport(
+            # Create Airline.
+            airport = Airport(
                 airport_name=row['Name'],
                 city=row['City'],
                 country=row['Country'],
                 iata_faa=row['IATA/FAA'],
                 icao=row['ICAO'],
-                location=NeomodelPoint(latitude=row['Latitude'], longitude=row['Longitude'], height=row['Altitude']),
+                latitude=row['Latitude'],
+                longitude=row['Longitude'],
                 timezone=row['Timezone'],
                 dst=row['DST'],
                 tz_database_time_zone=row['Tz database time zone'],
-            )
-            airport.save()
+            ).save(idx % chunk_size == 0)
 
             print(idx, airport.airport_name)
 
+        db.session.commit()  # save last chunk
+
 
 @manager.command
-def import_neo_routes(file_name='csv_data/routes.csv'):
+@timeit
+def import_routes(file_name='csv_data/routes.csv'):
     """ Import routes. """
+    airlines_cache = {}
+    airports_cache = {}
+
     if file_name[0] != '/':
         file_name = current_dir + '/' + file_name
 
@@ -173,43 +227,59 @@ def import_neo_routes(file_name='csv_data/routes.csv'):
                 print('incorrect row')
                 continue
 
-            airline = Airline.query.filter(Airline.iata == row['Airline']).first()
-            if not airline:
+            if row['Airline'] in airlines_cache:
+                airline_id = airlines_cache[row['Airline']]
+            else:
+                airline = Airline.query.filter(Airline.iata == row['Airline']).first()
+                airline_id = getattr(airline, 'id', None)
+                airlines_cache[row['Airline']] = airline_id
+
+            if not airline_id:
                 print('no airline', row['Airline'])
                 continue
 
-            try:
-                # pylint: disable=E1101
-                source_airport = NeoAirport.nodes.get(iata_faa=row['Source airport'])
-            except NeoAirport.DoesNotExist:
+            if row['Source airport'] in airports_cache:
+                source_airport = airports_cache[row['Source airport']]
+            else:
+                source_airport = Airport.query.filter(
+                    Airport.iata_faa == row['Source airport']
+                ).first()
+                airports_cache[row['Source airport']] = source_airport
+
+            if not source_airport:
                 print('no source_airport', row['Source airport'])
                 continue
 
-            try:
-                # pylint: disable=E1101
-                destination_airport = NeoAirport.nodes.get(iata_faa=row['Destination airport'])
-            except NeoAirport.DoesNotExist:
+            if row['Destination airport'] in airports_cache:
+                destination_airport = airports_cache[row['Destination airport']]
+            else:
+                destination_airport = Airport.query.filter(
+                    Airport.iata_faa == row['Destination airport']
+                ).first()
+                airports_cache[row['Destination airport']] = destination_airport
+
+            if not destination_airport:
                 print('no destination_airport', row['Destination airport'])
                 continue
 
             # Create Route.
-            route = source_airport.available_destinations.connect(
-                destination_airport
-            )
-            route.airline = int(airline.id)
-            route.distance = get_distance(
-                source_airport.location.latitude,
-                source_airport.location.longitude,
-                destination_airport.location.latitude,
-                destination_airport.location.longitude,
-            )
-            route.codeshare = row['Codeshare'] == 'Y'
-            route.equipment = row['Equipment']
+            Route(
+                source=source_airport.id,
+                destination=destination_airport.id,
+                airline=airline_id,
+                distance=get_distance(
+                    source_airport.latitude,
+                    source_airport.longitude,
+                    destination_airport.latitude,
+                    destination_airport.longitude,
+                ),
+                codeshare=row['Codeshare'] == 'Y',
+                equipment=row['Equipment']
+            ).save(idx % chunk_size == 0)
 
-            route.save()
+            print(idx, source_airport.airport_name, '-', destination_airport.airport_name)
 
-            print(idx, route.id, source_airport.airport_name, '-',
-                  destination_airport.airport_name)
+        db.session.commit()  # save last chunk
 
 
 @manager.command
@@ -272,10 +342,9 @@ def create_cities_index():
 @manager.command
 def import_all():
     import_cities()
-    import_populations()
     import_airlines()
-    import_neo_airports()
-    import_neo_routes()
+    import_airports()
+    import_routes()
 
 
 @manager.command
