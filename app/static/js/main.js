@@ -85,21 +85,21 @@ $(document).ready(function () {
         $(el).autocomplete({
             deferRequestBy: 300,
             serviceUrl: "/ajax/autocomplete/" + $(el).data("autocomplete-name"),
-            onSearchStart: function (query) {
+            onSearchStart(query) {
                 $(el).siblings(".glyphicon-refresh").show();
             },
-            onSearchComplete: function (query) {
+            onSearchComplete(query) {
                 $(el).siblings(".glyphicon-refresh").hide();
             },
-            onSearchError: function (query, jqXHR, textStatus, errorThrown) {
+            onSearchError(query, jqXHR, textStatus, errorThrown) {
                 $(el).siblings(".glyphicon-refresh").hide();
             },
-            onSelect: function (suggestion) {
+            onSelect(suggestion) {
                 if ($(el).attr("id") === "from" || $(el).attr("id") === "to") {
                     processCitySelect(suggestion, el, false);
                 }
             },
-            transformResult: function (response) {
+            transformResult(response) {
                 return {
                     suggestions: $.map($.parseJSON(response).suggestions, function (item) {
                         return {
@@ -131,7 +131,7 @@ $(document).ready(function () {
                 url: "/ajax/routes?" + formData,
                 type: "GET",
                 dataType: "json",
-                success: function (data) {
+                success(data) {
                     $jsRoutes.append('<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>');
                     $jsRoutes.children(".close").click(function (event) {
                         $jsRoutes.empty();
@@ -168,7 +168,7 @@ $(document).ready(function () {
                         $jsRoutes.append("<h4>No Routes</h4>");
                     }
                 },
-                complete: function (data, textStatus, jqXHR) {
+                complete(data, textStatus, jqXHR) {
                     $('#find-tickets [type="submit"] i').hide();
                 }
             });
@@ -180,7 +180,7 @@ $(document).ready(function () {
 
     /* Process route hover (show the route on the map) */
     $("#js-routes").on({
-        mouseenter: function () {
+        mouseenter() {
             let flightPath = new google.maps.Polyline({
                     path: $(this).data("route"),
                     geodesic: true,
@@ -191,7 +191,7 @@ $(document).ready(function () {
             $(this).data("flightPath", flightPath);
             flightPath.setMap(map);
         },
-        mouseleave: function () {
+        mouseleave() {
             $(this).data("flightPath").setMap(null);
         }
     }, "li");

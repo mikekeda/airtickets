@@ -24,7 +24,7 @@ function processCityClear(id) {
     delete fromToBounds[id];
 }
 
-function setMapFormField(field, name, lat, lng) {
+function setMapFormField(field, name, latitude, longitude) {
     "use strict";
     if (field === "from" || field === "to") {
         let selector = "input#" + field,
@@ -32,15 +32,15 @@ function setMapFormField(field, name, lat, lng) {
             suggestion = {
                 "value": name,
                 "data": {
-                    "lat": lat,
-                    "lng": lng
+                    "lat": latitude,
+                    "lng": longitude
                 }
             };
 
         $(selector).val(name);
         $(selector).parents(".form-group").removeClass("has-empty-value");
         processCitySelect(suggestion, selector, false);
-        fromToBounds[field] = new google.maps.LatLng(lat, lng);
+        fromToBounds[field] = new google.maps.LatLng(latitude, longitude);
         if (fromToBounds.hasOwnProperty("from") && fromToBounds.hasOwnProperty("to")) {
             bounds.extend(fromToBounds.from);
             bounds.extend(fromToBounds.to);
@@ -63,7 +63,7 @@ function addMarker(name, lat, lng) {
                 map: map
             });
 
-        google.maps.event.addListener(marker, "mouseover", (function (marker) {
+        google.maps.event.addListener(marker, "mouseover", function (marker) {
             return function () {
                 let text = name;
 
@@ -75,25 +75,25 @@ function addMarker(name, lat, lng) {
                 );
                 marker.infowindow.open(map, marker);
             };
-        })(marker));
+        }(marker));
 
-        google.maps.event.addListener(marker, "mouseout", (function (marker) {
+        google.maps.event.addListener(marker, "mouseout", function (marker) {
             return function () {
                 marker.infowindow.close();
             };
-        })(marker));
+        }(marker));
 
-        google.maps.event.addListener(marker, "click", (function () {
+        google.maps.event.addListener(marker, "click", function () {
             return function () {
                 setMapFormField("to", name, lat, lng);
             };
-        })(marker));
+        }(marker));
 
-        google.maps.event.addListener(marker, "rightclick", (function () {
+        google.maps.event.addListener(marker, "rightclick", function () {
             return function () {
                 setMapFormField("from", name, lat, lng);
             };
-        })(marker));
+        }(marker));
 
         markers.push(marker);
     }
@@ -111,7 +111,7 @@ function processCitySelect(suggestion, el, findClosestCity) {
         url: "/ajax/airports?lat=" + suggestion.data.lat + "&lng=" + suggestion.data.lng + "&limit=" + 5 + "&find_closest_city=" + findClosestCity,
         type: "GET",
         dataType: "json",
-        success: function (data, textStatus, jqXHR) {
+        success(data, textStatus, jqXHR) {
             $(el).siblings("select").slideDown().find("option").remove();
             for (i = 0; i < data.airports.length; i += 1) {
                 airportName = data.airports[i].name || data.airports[i].airport_name;
@@ -369,7 +369,7 @@ function initMap() {
                     "sw_lat": circle.getBounds().getSouthWest().lat()
                 },
                 dataType: "json",
-                success: function (data, textStatus, jqXHR) {
+                success(data, textStatus, jqXHR) {
                     let i;
                     for (i = 0; i < data.json_list.length; i += 1) {
                         addMarker(
