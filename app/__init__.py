@@ -1,9 +1,10 @@
 import logging
-from sqlalchemy import create_engine
+
 from flask import Flask, url_for
 from flask_sqlalchemy import SQLAlchemy
 from flask_redis import FlaskRedis
 from flask_elasticsearch import FlaskElasticsearch
+from sqlalchemy import create_engine
 
 from app.config import get_env_var, DefaultConfig, TestConfig
 

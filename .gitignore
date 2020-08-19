@@ -17,3 +17,4 @@ dump.rdb
 *.egg
 *.egg-info
 .DS_Store
+package-lock.json

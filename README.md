@@ -7,7 +7,7 @@ There you can find any ticket.
 
 ## Running
 
-- Import data:
-```
+-   Import data:
+```python
 python manage.py import_all
 ```

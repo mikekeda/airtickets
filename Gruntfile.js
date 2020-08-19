@@ -1,10 +1,12 @@
+const sass = require('node-sass');
+
 module.exports = function(grunt) {
   grunt.initConfig({
-    pkg: grunt.file.readJSON('package.json'),
+    pkg: grunt.file.readJSON("package.json"),
     scsslint: {
       dist: {
         allFiles: [
-          'app/static/sass/*.scss',
+          "app/static/sass/*.scss",
         ],
         options: {
           bundleExec: false,
@@ -16,39 +18,43 @@ module.exports = function(grunt) {
       },
     },
     sass: {
+      options: {
+        implementation: sass,
+        sourceMap: true
+      },
       dist: {
         options: {
           sourcemap: false,
-          outputStyle: 'compressed'
+          outputStyle: "compressed"
         },
         files: {
-          'app/static/css/main.css': 'app/sass/style.scss'
+          "app/static/css/main.css": "app/sass/style.scss"
         }
       },
     },
     autoprefixer:{
       dist: {
         options: {
-          browsers: ['last 2 versions', '> 1%']
+          browsers: ["last 2 versions", "> 1%"]
         },
         files:{
-          'app/static/css/main.css': 'app/static/css/main.css'
+          "app/static/css/main.css": "app/static/css/main.css"
         }
       }
     },
     jslint: { // configure the task
-      // lint your project's client code
+      // lint your project"s client code
       client: {
         src: [
-          'app/static/js/main.js',
-          'app/static/js/map.js'
+          "app/static/js/main.js",
+          "app/static/js/map.js"
         ],
         directives: {
           browser: true,
           predef: [
-            '$',
-            'jQuery',
-            'console'
+            "$",
+            "jQuery",
+            "console"
           ]
         },
       }
@@ -56,18 +62,18 @@ module.exports = function(grunt) {
 /*    uglify: {
       themejs: {
         files: {
-          'js/main.min.js': ['js/main.js']
+          "js/main.min.js": ["js/main.js"]
         }
       }
     },*/
     watch: {
       css: {
-        files: 'app/sass/**/*.scss',
-        tasks: ['sass']
+        files: "app/sass/**/*.scss",
+        tasks: ["sass"]
       },
       js: {
-        files: 'app/static/js/**/*.js',
-        tasks: ['jslint', 'uglify']
+        files: "app/static/js/**/*.js",
+        tasks: ["jslint", "uglify"]
       }
     },
     concurrent: {
@@ -79,12 +85,12 @@ module.exports = function(grunt) {
       }
     }
   });
-  grunt.loadNpmTasks('grunt-scss-lint');
-  grunt.loadNpmTasks('grunt-sass');
-  grunt.loadNpmTasks('grunt-contrib-watch');
-  grunt.loadNpmTasks('grunt-autoprefixer');
-  grunt.loadNpmTasks('grunt-jslint');
-  grunt.loadNpmTasks('grunt-contrib-uglify');
-  grunt.loadNpmTasks('grunt-concurrent');
-  grunt.registerTask('default',['concurrent:dev']);
-}
+  grunt.loadNpmTasks("grunt-scss-lint");
+  grunt.loadNpmTasks("grunt-sass");
+  grunt.loadNpmTasks("grunt-contrib-watch");
+  grunt.loadNpmTasks("grunt-autoprefixer");
+  grunt.loadNpmTasks("grunt-jslint");
+  grunt.loadNpmTasks("grunt-contrib-uglify");
+  grunt.loadNpmTasks("grunt-concurrent");
+  grunt.registerTask("default",["concurrent:dev"]);
+};

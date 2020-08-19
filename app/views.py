@@ -2,10 +2,10 @@ import os
 import pickle
 import math
 
+from flask import render_template, jsonify, request
 from elasticsearch.exceptions import (
     NotFoundError, ConnectionError as ElasticConnectionError
 )
-from flask import render_template, jsonify, request
 from sqlalchemy.orm import joinedload
 from redis.exceptions import ConnectionError as RedisConnectionError
 

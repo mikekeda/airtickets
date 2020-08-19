@@ -28,22 +28,22 @@ function processCityClear(id) {
 
 function setMapFormField(field, name, lat, lng) {
     "use strict";
-    if (field === 'from' || field === 'to') {
-        let selector = 'input#' + field,
+    if (field === "from" || field === "to") {
+        let selector = "input#" + field,
             bounds = new google.maps.LatLngBounds(),
             suggestion = {
-                'value': name,
-                'data': {
-                    'lat': lat,
-                    'lng': lng
+                "value": name,
+                "data": {
+                    "lat": lat,
+                    "lng": lng
                 }
             };
 
         $(selector).val(name);
-        $(selector).parents('.form-group').removeClass('has-empty-value');
+        $(selector).parents(".form-group").removeClass("has-empty-value");
         processCitySelect(suggestion, selector, false);
         from_to_bounds[field] = new google.maps.LatLng(lat, lng);
-        if (from_to_bounds.hasOwnProperty('from') && from_to_bounds.hasOwnProperty('to')) {
+        if (from_to_bounds.hasOwnProperty("from") && from_to_bounds.hasOwnProperty("to")) {
             bounds.extend(from_to_bounds.from);
             bounds.extend(from_to_bounds.to);
             map.fitBounds(bounds);
@@ -54,7 +54,7 @@ function setMapFormField(field, name, lat, lng) {
 function addMarker(name, lat, lng) {
     "use strict";
     if (isLocationFree([lat, lng])) {
-        let markerImage = new google.maps.MarkerImage('/static/img/dot.png',
+        let markerImage = new google.maps.MarkerImage("/static/img/dot.png",
                 new google.maps.Size(16, 16), //size
                 null,
                 new google.maps.Point(8, 8)), // offset point
@@ -65,35 +65,35 @@ function addMarker(name, lat, lng) {
                 map: map
             });
 
-        google.maps.event.addListener(marker, 'mouseover', (function (marker) {
+        google.maps.event.addListener(marker, "mouseover", (function (marker) {
             return function () {
                 let text = name;
 
                 marker.infowindow = new google.maps.InfoWindow();
                 marker.infowindow.setContent(
                     text +
-                        '<br>' +
-                        'Right Click=From  Left Click=To'
+                        "<br>" +
+                        "Right Click=From  Left Click=To"
                 );
                 marker.infowindow.open(map, marker);
             };
         })(marker));
 
-        google.maps.event.addListener(marker, 'mouseout', (function (marker) {
+        google.maps.event.addListener(marker, "mouseout", (function (marker) {
             return function () {
                 marker.infowindow.close();
             };
         })(marker));
 
-        google.maps.event.addListener(marker, 'click', (function () {
+        google.maps.event.addListener(marker, "click", (function () {
             return function () {
-                setMapFormField('to', name, lat, lng);
+                setMapFormField("to", name, lat, lng);
             };
         })(marker));
 
-        google.maps.event.addListener(marker, 'rightclick', (function () {
+        google.maps.event.addListener(marker, "rightclick", (function () {
             return function () {
-                setMapFormField('from', name, lat, lng);
+                setMapFormField("from", name, lat, lng);
             };
         })(marker));
 
@@ -104,21 +104,21 @@ function addMarker(name, lat, lng) {
 function processCitySelect(suggestion, el, find_closest_city) {
     "use strict";
     let bounds = new google.maps.LatLngBounds(),
-        airport_name,
+        airportName,
         string,
         i;
 
     /*jslint unparam: true*/
     $.ajax({
-        url: '/ajax/airports?lat=' + suggestion.data.lat + '&lng=' + suggestion.data.lng + '&limit=' + 5 + '&find_closest_city=' + find_closest_city,
-        type: 'GET',
-        dataType: 'json',
+        url: "/ajax/airports?lat=" + suggestion.data.lat + "&lng=" + suggestion.data.lng + "&limit=" + 5 + "&find_closest_city=" + find_closest_city,
+        type: "GET",
+        dataType: "json",
         success: function (data, textStatus, jqXHR) {
-            $(el).siblings('select').slideDown().find('option').remove();
+            $(el).siblings("select").slideDown().find("option").remove();
             for (i = 0; i < data.airports.length; i += 1) {
-                airport_name = data.airports[i].name || data.airports[i].airport_name;
-                string = '<option value="' + data.airports[i].id + '">' + airport_name + '</option>';
-                $(el).siblings('select').append(string);
+                airportName = data.airports[i].name || data.airports[i].airport_name;
+                string = '<option value="' + data.airports[i].id + '">' + airportName + '</option>';
+                $(el).siblings("select").append(string);
             }
             if (find_closest_city && data.closest_city.value) {
                 $(el).val(data.closest_city.value);
@@ -129,19 +129,19 @@ function processCitySelect(suggestion, el, find_closest_city) {
     /*jslint unparam: false*/
 
     if (!find_closest_city && isLocationFree([suggestion.data.lat, suggestion.data.lng])) {
-        from_to_bounds[$(el).attr('id')] = new google.maps.LatLng(suggestion.data.lat, suggestion.data.lng);
+        from_to_bounds[$(el).attr("id")] = new google.maps.LatLng(suggestion.data.lat, suggestion.data.lng);
 
         addMarker(suggestion.value, suggestion.data.lat, suggestion.data.lng);
 
-        if (from_to_bounds.hasOwnProperty('from')) {
+        if (from_to_bounds.hasOwnProperty("from")) {
             bounds.extend(from_to_bounds.from);
         }
 
-        if (from_to_bounds.hasOwnProperty('to')) {
+        if (from_to_bounds.hasOwnProperty("to")) {
             bounds.extend(from_to_bounds.to);
         }
 
-        if (from_to_bounds.hasOwnProperty('from') || from_to_bounds.hasOwnProperty('to')) {
+        if (from_to_bounds.hasOwnProperty("from") || from_to_bounds.hasOwnProperty("to")) {
             map.fitBounds(bounds);
         }
     }
@@ -311,14 +311,14 @@ function initMap() {
             maxZoom: 10,
             center: new google.maps.LatLng(-34.397, 150.644),
             mapTypeControlOptions: {
-                mapTypeIds: [google.maps.MapTypeId.ROADMAP, 'map_style']
+                mapTypeIds: [google.maps.MapTypeId.ROADMAP, "map_style"]
             }
         };
 
-    map = new google.maps.Map(document.getElementById('map'), mapOptions);
+    map = new google.maps.Map(document.getElementById("map"), mapOptions);
 
-    map.mapTypes.set('map_style', styledMap);
-    map.setMapTypeId('map_style');
+    map.mapTypes.set("map_style", styledMap);
+    map.setMapTypeId("map_style");
 
     console.log(language);
 
@@ -335,7 +335,7 @@ function initMap() {
                     }
                 };
             map.setCenter(initialLocation);
-            processCitySelect(suggestion, '#from', true);
+            processCitySelect(suggestion, "#from", true);
         });
     }
 
@@ -365,15 +365,15 @@ function initMap() {
 
             /*jslint unparam: true*/
             xhr = $.ajax({
-                url: '/ajax/get-cities',
-                type: 'GET',
+                url: "/ajax/get-cities",
+                type: "GET",
                 data: {
-                    'ne_lng': circle.getBounds().getNorthEast().lng(),
-                    'ne_lat': circle.getBounds().getNorthEast().lat(),
-                    'sw_lng': circle.getBounds().getSouthWest().lng(),
-                    'sw_lat': circle.getBounds().getSouthWest().lat()
+                    "ne_lng": circle.getBounds().getNorthEast().lng(),
+                    "ne_lat": circle.getBounds().getNorthEast().lat(),
+                    "sw_lng": circle.getBounds().getSouthWest().lng(),
+                    "sw_lat": circle.getBounds().getSouthWest().lat()
                 },
-                dataType: 'json',
+                dataType: "json",
                 success: function (data, textStatus, jqXHR) {
                     let i;
                     for (i = 0; i < data.json_list.length; i += 1) {

@@ -42,7 +42,7 @@ class DefaultConfig:
     ELASTICSEARCH_HOST = "localhost:9200"
 
     # Set a 'SECRET_KEY' to enable the Flask session cookies.
-    SECRET_KEY = 'A0Zr98j/3yX I~XHH!jmN]LWX/,?RT'
+    SECRET_KEY = get_env_var('SECRET_KEY', 'A0Zr98j/3yX I~XHH!jmN]LWX/,?RT')
 
     SQLALCHEMY_TRACK_MODIFICATIONS = True
 

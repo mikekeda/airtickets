@@ -1,210 +1,210 @@
 /* CSS declarations go here */
 body {
-    padding-top: 50px;
+  padding-top: 50px;
 
-    @media (max-width: 768px) {
-        padding-top: 150px;
-    }
+  @media (max-width: 768px) {
+    padding-top: 150px;
+  }
 }
 
 #content {
-    min-height: calc(100vh - 110px);
+  min-height: calc(100vh - 110px);
 
-    .sidebar-nav {
-        h3 {
-            margin-top: 10px;
-        }
+  .sidebar-nav {
+    h3 {
+      margin-top: 10px;
     }
+  }
 }
 
 h1.navbar-brand {
-    margin: 0;
+  margin: 0;
 }
 
 #map {
-    height: calc(100vh - 90px);
+  height: calc(100vh - 90px);
 }
 
 #map-info {
-    bottom: 10px;
-    left: 0;
-    pointer-events: none;
-    position: absolute;
-    right: 0;
-    text-align: center;
+  bottom: 10px;
+  left: 0;
+  pointer-events: none;
+  position: absolute;
+  right: 0;
+  text-align: center;
 
-    .content {
-        background-color: rgba(0, 0, 0, .7);
-        border-radius: 5px;
-        color: #fff;
-        display: inline-block;
-        padding: 10px 30px;
-        width: auto;
+  .content {
+    background-color: rgba(0, 0, 0, 0.7);
+    border-radius: 5px;
+    color: #fff;
+    display: inline-block;
+    padding: 10px 30px;
+    width: auto;
 
-        span+span {
-            margin-left: 15px;
-            white-space: pre;
+    span + span {
+      margin-left: 15px;
+      white-space: pre;
 
-            &#clean-map {
-                cursor: pointer;
+      &#clean-map {
+        cursor: pointer;
 
-                &:hover {
-                    text-shadow:0px 0px 1px #ccc;
-                }
-            }
+        &:hover {
+          text-shadow: 0 0 1px #ccc;
         }
+      }
     }
+  }
 }
 
 #technologies {
-    .thumbnail {
-        &:hover {
-            transform: scale(1.05);
-            transition: .2s;
-        }
-
-        a {
-            align-items: center;
-            display: flex;
-            justify-content: center;
-            height: 200px;
-
-            img {
-                max-height: 100%;
-            }
-
-            svg {
-                width: 100%;
-            }
-        }
+  .thumbnail {
+    &:hover {
+      transform: scale(1.05);
+      transition: 0.2s;
     }
 
-    .caption {
-        p {
-            min-height: 3em;
-        }
+    a {
+      align-items: center;
+      display: flex;
+      justify-content: center;
+      height: 200px;
+
+      img {
+        max-height: 100%;
+      }
+
+      svg {
+        width: 100%;
+      }
     }
+  }
+
+  .caption {
+    p {
+      min-height: 3em;
+    }
+  }
 }
 
 #find-tickets {
-    padding-top: 20px;
+  padding-top: 20px;
 }
 
 .has-feedback.has-clear {
-    &.has-empty-value {
-        /* Do not display clear button if field has empty value */
-        .form-control-clear {
-            display: none;
-        }
-    }
-
-    /* Remove Internet Explorer native clear button */
-    input::-ms-clear {
-        display: none;
-    }
-
+  &.has-empty-value {
+    /* Do not display clear button if field has empty value */
     .form-control-clear {
-        color: #bbb;
-        color: rgba(0, 0, 0, 0.4);
-
-        /*
-         * Enable pointer events as they have been disabled since Bootstrap 3.3
-         * See https://github.com/twbs/bootstrap/pull/14104
-         */
-        pointer-events: auto;
-
-        &:hover {
-            color: #777;
-            color: rgba(0, 0, 0, 0.7);
-            cursor: pointer;
-        }
+      display: none;
     }
+  }
 
-    .glyphicon-refresh {
-        opacity: 0.4;
-        position: absolute;
-        right: 25px;
-        top: 10px;
+  /* Remove Internet Explorer native clear button */
+  input::-ms-clear {
+    display: none;
+  }
+
+  .form-control-clear {
+    color: #bbb;
+    color: rgba(0, 0, 0, 0.4);
+
+    /*
+     * Enable pointer events as they have been disabled since Bootstrap 3.3
+     * See https://github.com/twbs/bootstrap/pull/14104
+     */
+    pointer-events: auto;
+
+    &:hover {
+      color: #777;
+      color: rgba(0, 0, 0, 0.7);
+      cursor: pointer;
     }
+  }
+
+  .glyphicon-refresh {
+    opacity: 0.4;
+    position: absolute;
+    right: 25px;
+    top: 10px;
+  }
 }
 
 .autocomplete-suggestions {
-    background-color: white;
-    border: 1px solid #ccc;
-    padding: 0;
-    overflow: auto;
+  background-color: white;
+  border: 1px solid #ccc;
+  padding: 0;
+  overflow: auto;
 
-    .autocomplete-suggestion {
-        cursor: pointer;
-        padding: 10px 30px;
-    }
+  .autocomplete-suggestion {
+    cursor: pointer;
+    padding: 10px 30px;
+  }
 
-    & + .autocomplete-suggestion {
-        border-top: 1px solid #ccc;
-    }
+  & + .autocomplete-suggestion {
+    border-top: 1px solid #ccc;
+  }
 }
 
 select.form-control {
-    margin-top: 15px;
+  margin-top: 15px;
 
-    & + .tooltip {
-        min-width: 300px;
+  & + .tooltip {
+    min-width: 300px;
 
-        &.left {
-            margin-left: -20px;
-        }
-
-        &.right {
-            margin-right: -20px;
-        }
+    &.left {
+      margin-left: -20px;
     }
+
+    &.right {
+      margin-right: -20px;
+    }
+  }
 }
 
 .has-feedback .form-control {
-    padding-right: 30px;
+  padding-right: 30px;
 }
 
 #js-routes {
-    position: relative;
+  position: relative;
 
-    .close {
-        position: absolute;
-        right: 0;
-        top: -5px;
-    }
+  .close {
+    position: absolute;
+    right: 0;
+    top: -5px;
+  }
 
-    li {
-        cursor: pointer;
-    }
+  li {
+    cursor: pointer;
+  }
 }
 
 .glyphicon.spinning {
-    animation: spin 1s infinite linear;
-    -webkit-animation: spin2 1s infinite linear;
+  animation: spin 1s infinite linear;
+  -webkit-animation: spin2 1s infinite linear;
 }
 
 @keyframes spin {
-    from { transform: scale(1) rotate(0deg); }
-    to { transform: scale(1) rotate(360deg); }
+  from { transform: scale(1) rotate(0deg); }
+  to { transform: scale(1) rotate(360deg); }
 }
 
 @-webkit-keyframes spin2 {
-    from { -webkit-transform: rotate(0deg); }
-    to { -webkit-transform: rotate(360deg); }
+  from { -webkit-transform: rotate(0deg); }
+  to { -webkit-transform: rotate(360deg); }
 }
 
 .footer {
-    margin-top: 20px;
-    padding: 10px;
+  margin-top: 20px;
+  padding: 10px;
 
-    p {
-        margin: 0;
-    }
+  p {
+    margin: 0;
+  }
 }
 
 @media (min-width: 768px) {
-    #map-wraper {
-        right: 0;
-        position: fixed;
-    }
+  #map-wraper {
+    right: 0;
+    position: fixed;
+  }
 }
