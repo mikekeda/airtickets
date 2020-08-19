@@ -2,9 +2,7 @@
 /*global google*/
 
 let map,
-    latitude,
-    longitude,
-    from_to_bounds = [],
+    fromToBounds = [],
     markers = [];
 
 function isLocationFree(search) {
@@ -23,7 +21,7 @@ function isLocationFree(search) {
 
 function processCityClear(id) {
     "use strict";
-    delete from_to_bounds[id];
+    delete fromToBounds[id];
 }
 
 function setMapFormField(field, name, lat, lng) {
@@ -42,10 +40,10 @@ function setMapFormField(field, name, lat, lng) {
         $(selector).val(name);
         $(selector).parents(".form-group").removeClass("has-empty-value");
         processCitySelect(suggestion, selector, false);
-        from_to_bounds[field] = new google.maps.LatLng(lat, lng);
-        if (from_to_bounds.hasOwnProperty("from") && from_to_bounds.hasOwnProperty("to")) {
-            bounds.extend(from_to_bounds.from);
-            bounds.extend(from_to_bounds.to);
+        fromToBounds[field] = new google.maps.LatLng(lat, lng);
+        if (fromToBounds.hasOwnProperty("from") && fromToBounds.hasOwnProperty("to")) {
+            bounds.extend(fromToBounds.from);
+            bounds.extend(fromToBounds.to);
             map.fitBounds(bounds);
         }
     }
@@ -101,7 +99,7 @@ function addMarker(name, lat, lng) {
     }
 }
 
-function processCitySelect(suggestion, el, find_closest_city) {
+function processCitySelect(suggestion, el, findClosestCity) {
     "use strict";
     let bounds = new google.maps.LatLngBounds(),
         airportName,
@@ -110,7 +108,7 @@ function processCitySelect(suggestion, el, find_closest_city) {
 
     /*jslint unparam: true*/
     $.ajax({
-        url: "/ajax/airports?lat=" + suggestion.data.lat + "&lng=" + suggestion.data.lng + "&limit=" + 5 + "&find_closest_city=" + find_closest_city,
+        url: "/ajax/airports?lat=" + suggestion.data.lat + "&lng=" + suggestion.data.lng + "&limit=" + 5 + "&find_closest_city=" + findClosestCity,
         type: "GET",
         dataType: "json",
         success: function (data, textStatus, jqXHR) {
@@ -120,7 +118,7 @@ function processCitySelect(suggestion, el, find_closest_city) {
                 string = '<option value="' + data.airports[i].id + '">' + airportName + '</option>';
                 $(el).siblings("select").append(string);
             }
-            if (find_closest_city && data.closest_city.value) {
+            if (findClosestCity && data.closest_city.value) {
                 $(el).val(data.closest_city.value);
                 addMarker(data.closest_city.value, data.closest_city.data.lat, data.closest_city.data.lng);
             }
@@ -128,20 +126,20 @@ function processCitySelect(suggestion, el, find_closest_city) {
     });
     /*jslint unparam: false*/
 
-    if (!find_closest_city && isLocationFree([suggestion.data.lat, suggestion.data.lng])) {
-        from_to_bounds[$(el).attr("id")] = new google.maps.LatLng(suggestion.data.lat, suggestion.data.lng);
+    if (!findClosestCity && isLocationFree([suggestion.data.lat, suggestion.data.lng])) {
+        fromToBounds[$(el).attr("id")] = new google.maps.LatLng(suggestion.data.lat, suggestion.data.lng);
 
         addMarker(suggestion.value, suggestion.data.lat, suggestion.data.lng);
 
-        if (from_to_bounds.hasOwnProperty("from")) {
-            bounds.extend(from_to_bounds.from);
+        if (fromToBounds.hasOwnProperty("from")) {
+            bounds.extend(fromToBounds.from);
         }
 
-        if (from_to_bounds.hasOwnProperty("to")) {
-            bounds.extend(from_to_bounds.to);
+        if (fromToBounds.hasOwnProperty("to")) {
+            bounds.extend(fromToBounds.to);
         }
 
-        if (from_to_bounds.hasOwnProperty("from") || from_to_bounds.hasOwnProperty("to")) {
+        if (fromToBounds.hasOwnProperty("from") || fromToBounds.hasOwnProperty("to")) {
             map.fitBounds(bounds);
         }
     }
@@ -164,7 +162,6 @@ function initMap() {
     let xhr,
         timer,
         circle,
-        language = window.navigator.userLanguages || window.navigator.languages,
         styles = [
             {
                 "elementType": "geometry",
@@ -320,9 +317,7 @@ function initMap() {
     map.mapTypes.set("map_style", styledMap);
     map.setMapTypeId("map_style");
 
-    console.log(language);
-
-    from_to_bounds = [];
+    fromToBounds = [];
     markers = [];
 
     if (navigator.geolocation) {
