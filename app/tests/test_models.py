@@ -19,18 +19,20 @@ class AirticketsModelsTest(BaseTestCase):
 
         # Test City model.
         city = City.query.filter_by(gns_ufi=10735690).first()
-        assert city
+        self.assertIsNotNone(city)
 
         # Test City get_closest_cities() method.
+        closest_city = City.get_closest_cities(33, 68)[0]
+        # Different version of postgres have different precision.
+        self.assertAlmostEqual(closest_city.pop('distance'), 43.9950902428921)
         self.assertDictEqual(
-            City.get_closest_cities(33, 68)[0],
+            closest_city,
             {
                 'id': 1,
                 'country_code': 'AF',
                 'data': {'lat': 33.175678, 'lng': 68.730449},
                 'population': 0,
                 'value': 'شرن',
-                'distance': 43.9950902428921
             }
         )
         # Test City serialize() method.
