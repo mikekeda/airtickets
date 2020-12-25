@@ -1,5 +1,4 @@
 import math
-import pytest
 
 from app.models import _deg2rad, City, CityName, Airline, get_distance
 from app.tests import BaseTestCase
@@ -15,7 +14,6 @@ class AirticketsModelsTest(BaseTestCase):
         dist = get_distance(50.433333, 30.516667, 52.25, 21)
         self.assertEqual(round(dist, 12), 690.616317346638)
 
-    @pytest.mark.skip  # TODO[Mike] Fix the test
     def test_commands_import_cities(self):
         import_cities(rows=10)
 

@@ -6,6 +6,7 @@ from collections import defaultdict
 from functools import wraps
 import os
 from time import time
+from typing import Dict, Tuple, Optional
 
 from flask_script import Manager, Server
 from flask_migrate import Migrate, MigrateCommand
@@ -44,7 +45,7 @@ def timeit(f):
 @timeit
 def import_cities(file_name='csv_data/worldcities.csv', rows=None):
     """ Import cities. """
-    city_cache = {}
+    city_cache: Dict[Tuple[float, float], Optional[int]] = {}
     populations_cache = defaultdict(list)
     _cityname_cache = defaultdict(list)
 
@@ -126,7 +127,9 @@ def import_cities(file_name='csv_data/worldcities.csv', rows=None):
 
                 print(idx, row[' name'], '(create City)')
 
+        db.session.bulk_save_objects(basket, return_defaults=True)
         db.session.commit()  # save last chunk
+        city_cache.update({(c.latitude, c.longitude): c.id for c in basket})  # set cache
 
     # Create a CityName.
     with open(file_name, 'r') as csvfile:
@@ -149,6 +152,7 @@ def import_cities(file_name='csv_data/worldcities.csv', rows=None):
 
             print(idx, row[' name'], '(create CityName)')
 
+        db.session.bulk_save_objects(basket)
         db.session.commit()  # save last chunk
 
 
