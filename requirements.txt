@@ -2,7 +2,7 @@ alembic==1.5.5
 elasticsearch==7.11.0
 Flask==1.1.2
 Flask-Elasticsearch==0.2.5
-Flask-Migrate==2.6.0
+Flask-Migrate==2.7.0
 Flask-Redis==0.4.0
 Flask-Script==2.0.6
 Flask-SQLAlchemy==2.4.4
