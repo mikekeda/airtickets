@@ -93,16 +93,14 @@ class AirticketsModelsTest(BaseTestCase):
         serialized_airline = airline.serialize()
         # Check all fields except id.
         assert all(
-            [
-                serialized_airline.get(key) == val
-                for key, val in {
-                    "name": "3D Aviation",
-                    "alias": "\\N",
-                    "iata": "",
-                    "icao": "SEC",
-                    "callsign": "SECUREX",
-                    "country": "United States",
-                    "active": False,
-                }.items()
-            ]
+            serialized_airline.get(key) == val
+            for key, val in {
+                "name": "3D Aviation",
+                "alias": "\\N",
+                "iata": "",
+                "icao": "SEC",
+                "callsign": "SECUREX",
+                "country": "United States",
+                "active": False,
+            }.items()
         )
