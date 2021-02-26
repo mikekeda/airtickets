@@ -75,7 +75,9 @@ class Airport(BaseModel):
     tz_database_time_zone = db.Column(db.String())
 
     @staticmethod
-    def get_closest_airports(lat: float, lng: float, limit: int = 1, offset: int = 0) -> list[dict]:
+    def get_closest_airports(
+        lat: float, lng: float, limit: int = 1, offset: int = 0
+    ) -> list[dict]:
         conn = engine.connect()
 
         s = text(
@@ -197,7 +199,9 @@ class City(BaseModel):
     city_names = db.relationship("CityName", backref=db.backref("city_names"))
 
     @staticmethod
-    def get_closest_cities(lat: float, lng: float, limit: int = 1, offset: int = 0) -> list[dict]:
+    def get_closest_cities(
+        lat: float, lng: float, limit: int = 1, offset: int = 0
+    ) -> list[dict]:
         """ Get closest cities by coordinates. """
         result = []
         conn = engine.connect()
