@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 from collections import defaultdict
 from functools import reduce
 import math
+from typing import Any
 
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.sql import text
@@ -18,10 +21,9 @@ def get_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     radius = 6371  # radius of the earth in km
     d_lat = _deg2rad(lat2 - lat1)
     d_lon = _deg2rad(lon2 - lon1)
-    dummy_a = math.sin(d_lat / 2) * math.sin(d_lat / 2) + \
-        math.cos(_deg2rad(lat1)) * \
-        math.cos(_deg2rad(lat2)) * \
-        math.sin(d_lon / 2) * math.sin(d_lon / 2)
+    dummy_a = math.sin(d_lat / 2) * math.sin(d_lat / 2) + math.cos(
+        _deg2rad(lat1)
+    ) * math.cos(_deg2rad(lat2)) * math.sin(d_lon / 2) * math.sin(d_lon / 2)
     dummy_c = 2 * math.atan2(math.sqrt(dummy_a), math.sqrt(1 - dummy_a))
     distance = radius * dummy_c  # distance in km
 
@@ -73,7 +75,7 @@ class Airport(BaseModel):
     tz_database_time_zone = db.Column(db.String())
 
     @staticmethod
-    def get_closest_airports(lat: float, lng: float, limit: int = 1, offset: int = 0):
+    def get_closest_airports(lat: float, lng: float, limit: int = 1, offset: int = 0) -> list[dict]:
         conn = engine.connect()
 
         s = text(
@@ -89,24 +91,26 @@ class Airport(BaseModel):
             "LIMIT :limit OFFSET :offset"
         )
 
-        raw_data = conn.execute(s, latitude=lat, longitude=lng, limit=limit,
-                                offset=offset).fetchall()
+        raw_data = conn.execute(
+            s, latitude=lat, longitude=lng, limit=limit, offset=offset
+        ).fetchall()
 
         return [dict(row) for row in raw_data]
 
 
 class Route(BaseModel):
-    source = db.Column(db.Integer, db.ForeignKey('airport.id'))
-    destination = db.Column(db.Integer, db.ForeignKey('airport.id'))
-    airline = db.Column(db.Integer, db.ForeignKey('airline.id'))
+    source = db.Column(db.Integer, db.ForeignKey("airport.id"))
+    destination = db.Column(db.Integer, db.ForeignKey("airport.id"))
+    airline = db.Column(db.Integer, db.ForeignKey("airline.id"))
     distance = db.Column(db.Float)
     codeshare = db.Column(db.Boolean, default=False)
     equipment = db.Column(db.String)
 
     @staticmethod
-    def get_path(source, destination):
+    def get_path(source: int, destination: int) -> dict[int, list]:
         result = defaultdict(list)
-        s = text("""
+        s = text(
+            """
         WITH RECURSIVE search_graph(
             source, -- point 1
             destination, -- point 2
@@ -140,41 +144,46 @@ class Route(BaseModel):
         WHERE destination = :destination
         ORDER BY distance
         LIMIT 10
-        """)
+        """
+        )
 
         conn = engine.connect()
         raw_data = conn.execute(s, source=source, destination=destination).fetchall()
         conn.close()
 
-        needed_cities = list(reduce(lambda a, b: a | set(b['path']), raw_data, set()))
-        airports = Airport.query.with_entities(
-            Airport.id,
-            Airport.airport_name,
-            Airport.latitude,
-            Airport.longitude,
-        ).filter(Airport.id.in_(needed_cities)).all()
+        needed_cities = list(reduce(lambda a, b: a | set(b["path"]), raw_data, set()))
+        airports = (
+            Airport.query.with_entities(
+                Airport.id,
+                Airport.airport_name,
+                Airport.latitude,
+                Airport.longitude,
+            )
+            .filter(Airport.id.in_(needed_cities))
+            .all()
+        )
         airports = {
             airport.id: {
-                'airport_name': airport.airport_name,
-                'latitude': airport.latitude,
-                'longitude': airport.longitude,
+                "airport_name": airport.airport_name,
+                "latitude": airport.latitude,
+                "longitude": airport.longitude,
             }
             for airport in airports
         }
 
         for row in raw_data:
-            result[row['depth']].append({
-                'nodes': [airports[airport_id] for airport_id in row['path']],
-                'total_distance': row['distance'],
-            })
+            result[row["depth"]].append(
+                {
+                    "nodes": [airports[airport_id] for airport_id in row["path"]],
+                    "total_distance": row["distance"],
+                }
+            )
 
         return result
 
 
 class City(BaseModel):
-    __table_args__ = (
-        db.UniqueConstraint('latitude', 'longitude', name='location'),
-    )
+    __table_args__ = (db.UniqueConstraint("latitude", "longitude", name="location"),)
 
     country_code = db.Column(db.String(2))
     subdivision_code = db.Column(db.String(8))
@@ -185,10 +194,10 @@ class City(BaseModel):
     longitude = db.Column(db.Float)
     population = db.Column(db.Integer, default=0)
 
-    city_names = db.relationship('CityName', backref=db.backref('city_names'))
+    city_names = db.relationship("CityName", backref=db.backref("city_names"))
 
     @staticmethod
-    def get_closest_cities(lat, lng, limit=1, offset=0):
+    def get_closest_cities(lat: float, lng: float, limit: int = 1, offset: int = 0) -> list[dict]:
         """ Get closest cities by coordinates. """
         result = []
         conn = engine.connect()
@@ -207,19 +216,18 @@ class City(BaseModel):
             "LIMIT :limit OFFSET :offset"
         )
 
-        raw_data = conn.execute(s, latitude=lat, longitude=lng, limit=limit, offset=offset).fetchall()
+        raw_data = conn.execute(
+            s, latitude=lat, longitude=lng, limit=limit, offset=offset
+        ).fetchall()
 
         for raw_item in raw_data:
             item = {
-                'id': raw_item['id'],
-                'country_code': raw_item['country_code'],
-                'data': {
-                    'lat': raw_item['latitude'],
-                    'lng': raw_item['longitude']
-                },
-                'population': raw_item['population'],
-                'value': raw_item['name'],
-                'distance': raw_item['distance']
+                "id": raw_item["id"],
+                "country_code": raw_item["country_code"],
+                "data": {"lat": raw_item["latitude"], "lng": raw_item["longitude"]},
+                "population": raw_item["population"],
+                "value": raw_item["name"],
+                "distance": raw_item["distance"],
             }
             result.append(item)
 
@@ -227,19 +235,19 @@ class City(BaseModel):
 
         return result
 
-    def serialize(self):
+    def serialize(self) -> dict[str, Any]:
         """ Serialize. """
         result = {
-            'id': self.id,
-            'gns_ufi': self.gns_ufi,
-            'latitude': self.latitude,
-            'longitude': self.longitude,
-            'country_code': self.country_code,
-            'subdivision_code': self.subdivision_code,
-            'gns_fd': self.gns_fd,
-            'language_code': self.language_code,
-            'population': self.population,
-            'city_names': [name.name for name in self.city_names],
+            "id": self.id,
+            "gns_ufi": self.gns_ufi,
+            "latitude": self.latitude,
+            "longitude": self.longitude,
+            "country_code": self.country_code,
+            "subdivision_code": self.subdivision_code,
+            "gns_fd": self.gns_fd,
+            "language_code": self.language_code,
+            "population": self.population,
+            "city_names": [name.name for name in self.city_names],
         }
         return result
 
@@ -247,43 +255,43 @@ class City(BaseModel):
 class CityName(BaseModel):
     name = db.Column(db.String(128), index=True)
     lang = db.Column(db.String(16))
-    city_id = db.Column(db.Integer, db.ForeignKey('city.id'), nullable=False)
+    city_id = db.Column(db.Integer, db.ForeignKey("city.id"), nullable=False)
 
-    city = db.relationship('City', backref=db.backref('city'))
+    city = db.relationship("City", backref=db.backref("city"))
 
-    def serialize(self):
+    def serialize(self) -> dict[str, Any]:
         """ Serialize. """
         return {
-            'name': self.name,
-            'city_id': self.city_id,
+            "name": self.name,
+            "city_id": self.city_id,
         }
 
-    def autocomplete_serialize(self):
+    def autocomplete_serialize(self) -> dict[str, Any]:
         """ Serialize for autocomplete. """
         return {
-            'value': self.name,
-            'data': {
-                'id': self.city.id,
-                'lng': self.city.longitude,
-                'lat': self.city.latitude,
-                'country_code': self.city.country_code
+            "value": self.name,
+            "data": {
+                "id": self.city.id,
+                "lng": self.city.longitude,
+                "lat": self.city.latitude,
+                "country_code": self.city.country_code,
             },
         }
 
-    def elastic_serialize(self):
+    def elastic_serialize(self) -> dict[str, Any]:
         """ Serialize for Elastic. """
         serialize_dict = self.autocomplete_serialize()
-        serialize_dict['location'] = {
+        serialize_dict["location"] = {
             "lat": self.city.latitude,
-            "lon": self.city.longitude
+            "lon": self.city.longitude,
         }
-        serialize_dict['population'] = getattr(self.city, 'population', 0)
+        serialize_dict["population"] = getattr(self.city, "population", 0)
 
         return {
-            '_index': 'airtickets-city-index',
-            '_type': 'CityName',
-            '_id': self.city_id,
-            '_source': serialize_dict
+            "_index": "airtickets-city-index",
+            "_type": "CityName",
+            "_id": self.city_id,
+            "_source": serialize_dict,
         }
 
 
@@ -296,17 +304,17 @@ class Airline(BaseModel):
     country = db.Column(db.String(64))
     active = db.Column(db.Boolean, default=False)
 
-    def serialize(self):
+    def serialize(self) -> dict[str, Any]:
         """ Serialize. """
         return {
-            'id': self.id,
-            'name': self.name,
-            'alias': self.alias,
-            'iata': self.iata,
-            'icao': self.icao,
-            'callsign': self.callsign,
-            'country': self.country,
-            'active': self.active,
+            "id": self.id,
+            "name": self.name,
+            "alias": self.alias,
+            "iata": self.iata,
+            "icao": self.icao,
+            "callsign": self.callsign,
+            "country": self.country,
+            "active": self.active,
         }
 
 

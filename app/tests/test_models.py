@@ -7,6 +7,7 @@ from manage import import_cities, import_airlines
 
 class AirticketsModelsTest(BaseTestCase):
     """ Test models and manage.py commands. """
+
     def test_deg2rad(self):
         self.assertEqual(_deg2rad(180), math.pi)
 
@@ -24,74 +25,62 @@ class AirticketsModelsTest(BaseTestCase):
         # Test City get_closest_cities() method.
         closest_city = City.get_closest_cities(33, 68)[0]
         # Different version of postgres have different precision.
-        self.assertAlmostEqual(closest_city.pop('distance'), 43.9950902428921)
+        self.assertAlmostEqual(closest_city.pop("distance"), 43.9950902428921)
         self.assertDictEqual(
             closest_city,
             {
-                'id': 1,
-                'country_code': 'AF',
-                'data': {'lat': 33.175678, 'lng': 68.730449},
-                'population': 0,
-                'value': 'شرن',
-            }
+                "id": 1,
+                "country_code": "AF",
+                "data": {"lat": 33.175678, "lng": 68.730449},
+                "population": 0,
+                "value": "شرن",
+            },
         )
         # Test City serialize() method.
         self.assertDictEqual(
             city.serialize(),
             {
-                'city_names': ['شرن', 'Sharan'],
-                'country_code': 'AF',
-                'gns_fd': 'PPLA',
-                'gns_ufi': 10735690,
-                'id': 1,
-                'language_code': 'ps',
-                'latitude': 33.175678,
-                'longitude': 68.730449,
-                'population': 0,
-                'subdivision_code': '29'
-            }
+                "city_names": ["شرن", "Sharan"],
+                "country_code": "AF",
+                "gns_fd": "PPLA",
+                "gns_ufi": 10735690,
+                "id": 1,
+                "language_code": "ps",
+                "latitude": 33.175678,
+                "longitude": 68.730449,
+                "population": 0,
+                "subdivision_code": "29",
+            },
         )
 
         # Test CityName model.
         city_name = CityName.query.filter_by(
-            name='Sharan',
-            lang='latin',
-            city_id=city.id
+            name="Sharan", lang="latin", city_id=city.id
         ).first()
         assert city_name
 
         # Test CityName serialize() method.
         self.assertDictEqual(
-            city_name.serialize(),
-            {'name': 'Sharan', 'city_id': city.id}
+            city_name.serialize(), {"name": "Sharan", "city_id": city.id}
         )
         # Test CityName autocomplete_serialize() method.
         expected = {
-            'value': 'Sharan',
-            'data': {
-                'id': 1,
-                'lng': 68.730449,
-                'lat': 33.175678,
-                'country_code': 'AF'
-            }
+            "value": "Sharan",
+            "data": {"id": 1, "lng": 68.730449, "lat": 33.175678, "country_code": "AF"},
         }
-        self.assertDictEqual(
-            city_name.autocomplete_serialize(),
-            expected
-        )
+        self.assertDictEqual(city_name.autocomplete_serialize(), expected)
         # Test CityName elastic_serialize() method.
-        expected.update({
-            'location': {'lat': 33.175678, 'lon': 68.730449},
-            'population': 0
-        })
+        expected.update(
+            {"location": {"lat": 33.175678, "lon": 68.730449}, "population": 0}
+        )
         self.assertDictEqual(
             city_name.elastic_serialize(),
             {
-                '_index': 'airtickets-city-index',
-                '_type': 'CityName',
-                '_id': 1,
-                '_source': expected
-            }
+                "_index": "airtickets-city-index",
+                "_type": "CityName",
+                "_id": 1,
+                "_source": expected,
+            },
         )
 
     def test_commands_import_airlines(self):
@@ -103,15 +92,17 @@ class AirticketsModelsTest(BaseTestCase):
         # Test Airline serialize() method.
         serialized_airline = airline.serialize()
         # Check all fields except id.
-        assert all([
-            serialized_airline.get(key) == val
-            for key, val in {
-                'name': '3D Aviation',
-                'alias': '\\N',
-                'iata': '',
-                'icao': 'SEC',
-                'callsign': 'SECUREX',
-                'country': 'United States',
-                'active': False
-            }.items()
-        ])
+        assert all(
+            [
+                serialized_airline.get(key) == val
+                for key, val in {
+                    "name": "3D Aviation",
+                    "alias": "\\N",
+                    "iata": "",
+                    "icao": "SEC",
+                    "callsign": "SECUREX",
+                    "country": "United States",
+                    "active": False,
+                }.items()
+            ]
+        )
