@@ -9,7 +9,7 @@
 
     <link href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH3wYdDjkoMyB28gAAAttJREFUOMt9k2tI02EUxp/tr8M00cKkSLIw8xKSltK6GVkSJQSRfehiRVfDCDJDjG6GpSSmUkmzzMgK7cZMozVos83c5tTm1DmnueYNdU6TeZn5n6dPlpp2Pr0HzvN7ec7zvoiJu+z54u2HDAAoeifGbJWaKZjW5xW8+XPmBgX68qN2hMdr6vUjLW2mtVfT7k8bTsvKhbKqdqHsq/qjrqmFpHIVnYiJnn5DoVBUPDpqI3FZRRkAzISoqmt77XY79ZgtlJaVuwsATp6/4oHJYZcVYcyde/mn9M1GelpY/HAqJPFG+naWZWlk1EZyhboSAB49e5VYUfmN/vEam3DTt6nlL+R2pgCpmYLocZalwUEr9fRZSK6oMhrbOklVo6VZFzYTIpWrtFbrMJkt/dTR1UPff7STodVEUrlSBACcOSCr4s8eadLU6a2R2za62sbGMDFBYBguxn+xMJrazQ8evwwMDvLvmzOyEpFU09xqIqFISt1mC30QCrtvZ+dFJSVnREymM6dYIlPqLP0/SfxFQWnpGZQQG0O1khxKPBy1Jfn0Xvz3sUhkSp3ZMkAyVQ1ZR2x0+dwx6qovok5tAZXmp9QBwFQIZ1KcdOEMJDKlLmi1X0BjixGrV/mgSlXZbNY+913gBizwWALePGf09Tu25WXnh71WG3oBgJkqXr9uTUBTqwn+Pt6ordMbIrdv9fPkuQucXBcvcnGyBXO5DFxdyC1084ZLgUu9GsUKTQPz+VMpxNJyET8shD80Mgz3+fPR0GgwRITz/VIzBXAe6xy6dPe5cFNwCN+ZN7SScXQCz8GO5b7e+6l34AUAQNugJ4Vaw3Z0dVNZucow8wNNes6/dbyzJOcg1YhSqL3+Pe0MXOoFAC5Z93PvanUGKhVJNACW7dl34J8lE1Vj94aQ0CcpR9liwUW6FnfoOgA3DjgcLohcAdgBMA4OjjaWHR+bLSmGYRztdrsDAAYAD8Dgb4uDhkF8mVWbAAAAAElFTkSuQmCC" rel="icon" type="image/x-icon" />
 
-    <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="{{ static('bower_components/bootstrap/dist/css/bootstrap.min.css') }}">
     <link rel="stylesheet" type="text/css" href="{{ static('css/main.css') }}">
     <style></style>
     {% block css %}{% endblock css %}
@@ -45,7 +45,7 @@
       </footer>
     </div>
 
-    <script defer src="//ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script defer src="{{ static('bower_components/jquery/dist/jquery.min.js') }}"></script>
 
     <!-- Global site tag (gtag.js) - Google Analytics -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=UA-74402136-7"></script>
@@ -57,8 +57,8 @@
       gtag('config', 'UA-74402136-7');
     </script>
 
-    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jquery.devbridge-autocomplete/1.4.11/jquery.autocomplete.min.js"></script>
-    <script defer src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script defer src="{{ static('bower_components/devbridge-autocomplete/dist/jquery.autocomplete.min.js') }}"></script>
+    <script defer src="{{ static('bower_components/bootstrap/dist/js/bootstrap.min.js') }}"></script>
     <script defer src="{{ static('js/main.js') }}"></script>
     <script defer src="{{ static('js/map.js') }}"></script>
 
