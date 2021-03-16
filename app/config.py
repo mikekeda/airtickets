@@ -27,7 +27,7 @@ def get_env_var(name: str, default: str = "") -> str:
 
 class DefaultConfig:
     # PostgreSQL configurations.
-    SQLALCHEMY_DATABASE_URI = "postgres://{}:{}@{}/{}".format(
+    SQLALCHEMY_DATABASE_URI = "postgresql://{}:{}@{}/{}".format(
         get_env_var("DB_USER", "airtickets"),
         get_env_var("DB_PASSWORD", "airtickets"),
         get_env_var("DB_HOST", "127.0.0.1"),
@@ -51,7 +51,7 @@ class TestConfig(DefaultConfig):
     TESTING = True
 
     # PostgreSQL configurations.
-    SQLALCHEMY_DATABASE_URI = "postgres://{}:{}@{}/{}".format(
+    SQLALCHEMY_DATABASE_URI = "postgresql://{}:{}@{}/{}".format(
         get_env_var("TEST_DB_USER", "airtickets"),
         get_env_var("TEST_DB_PASSWORD", "airtickets"),
         get_env_var("DB_HOST", "127.0.0.1"),
