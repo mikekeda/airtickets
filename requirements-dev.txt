@@ -3,7 +3,7 @@ Flask-DebugToolbar==0.11.0
 Flask-Testing==0.8.1
 pep8==1.7.1
 pycodestyle==2.7.0
-pylint==2.7.2
+pylint==2.7.4
 pylint-flask==0.6
 pytest==6.2.2
 pytest-cov==2.11.1
