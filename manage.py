@@ -48,7 +48,7 @@ def timeit(f):
 @manager.command
 @timeit
 def import_cities(file_name="csv_data/worldcities.csv", rows=None):
-    """ Import cities. """
+    """Import cities."""
     city_cache: Dict[Tuple[float, float], Optional[int]] = {}
     populations_cache = defaultdict(list)
     _cityname_cache = defaultdict(list)
@@ -239,7 +239,7 @@ def import_airports(file_name="csv_data/airports.csv"):
 @manager.command
 @timeit
 def import_routes(file_name="csv_data/routes.csv"):
-    """ Import routes. """
+    """Import routes."""
     airlines_cache = {}
     airports_cache = {}
 

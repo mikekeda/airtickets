@@ -12,12 +12,12 @@ from app import db, engine
 
 
 def _deg2rad(deg: float) -> float:
-    """ Helper function that convert degrees to radians. """
+    """Helper function that convert degrees to radians."""
     return deg * (math.pi / 180)
 
 
 def get_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
-    """ Get distance between two points. """
+    """Get distance between two points."""
     radius = 6371  # radius of the earth in km
     d_lat = _deg2rad(lat2 - lat1)
     d_lon = _deg2rad(lon2 - lon1)
@@ -40,7 +40,7 @@ class BaseModel(db.Model):
     id = db.Column(db.Integer, primary_key=True)
 
     def save(self, commit=True):
-        """ Save. """
+        """Save."""
         db.session.add(self)
         if commit:
             db.session.commit()
@@ -48,7 +48,7 @@ class BaseModel(db.Model):
 
     @classmethod
     def get_or_create(cls, defaults=None, commit=True, **kwargs):
-        """ Get or create. """
+        """Get or create."""
         obj = db.session.query(cls).filter_by(**kwargs).first()
         created = False
         if not obj:
@@ -202,7 +202,7 @@ class City(BaseModel):
     def get_closest_cities(
         lat: float, lng: float, limit: int = 1, offset: int = 0
     ) -> list[dict]:
-        """ Get closest cities by coordinates. """
+        """Get closest cities by coordinates."""
         result = []
         conn = engine.connect()
 
@@ -240,7 +240,7 @@ class City(BaseModel):
         return result
 
     def serialize(self) -> dict[str, Any]:
-        """ Serialize. """
+        """Serialize."""
         result = {
             "id": self.id,
             "gns_ufi": self.gns_ufi,
@@ -264,14 +264,14 @@ class CityName(BaseModel):
     city = db.relationship("City", backref=db.backref("city"))
 
     def serialize(self) -> dict[str, Any]:
-        """ Serialize. """
+        """Serialize."""
         return {
             "name": self.name,
             "city_id": self.city_id,
         }
 
     def autocomplete_serialize(self) -> dict[str, Any]:
-        """ Serialize for autocomplete. """
+        """Serialize for autocomplete."""
         return {
             "value": self.name,
             "data": {
@@ -283,7 +283,7 @@ class CityName(BaseModel):
         }
 
     def elastic_serialize(self) -> dict[str, Any]:
-        """ Serialize for Elastic. """
+        """Serialize for Elastic."""
         serialize_dict = self.autocomplete_serialize()
         serialize_dict["location"] = {
             "lat": self.city.latitude,
@@ -309,7 +309,7 @@ class Airline(BaseModel):
     active = db.Column(db.Boolean, default=False)
 
     def serialize(self) -> dict[str, Any]:
-        """ Serialize. """
+        """Serialize."""
         return {
             "id": self.id,
             "name": self.name,

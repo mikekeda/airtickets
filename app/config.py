@@ -5,7 +5,7 @@ SITE_ENV_PREFIX = "AIRTICKETS"
 
 
 def get_env_var(name: str, default: str = "") -> str:
-    """ Get all sensitive data from google vm custom metadata. """
+    """Get all sensitive data from google vm custom metadata."""
     try:
         name = f"{SITE_ENV_PREFIX}_{name}"
         res = os.environ.get(name)

@@ -20,7 +20,7 @@ BASE_TEMPLATES_DIR = os.path.dirname(os.path.abspath(__file__)) + "/templates"
 
 @app.context_processor
 def select_parent_template() -> dict[str, str]:
-    """ Check if it's ajax, if so no need any parent template. """
+    """Check if it's ajax, if so no need any parent template."""
     parent_template = (
         "dummy_parent.html" if request.path[:6] == "/ajax/" else "base.html"
     )
@@ -38,20 +38,20 @@ def page_not_found(_):
 @app.route("/ajax/")
 @app.route("/")
 def index():
-    """ Main page. """
+    """Main page."""
     return render_template("index.html")
 
 
 @app.route("/ajax/technologies")
 @app.route("/technologies")
 def technologies():
-    """ About page. """
+    """About page."""
     return render_template("technologies.html")
 
 
 @app.route("/ajax/autocomplete/cities")
 def autocomplete_cities():
-    """ Autocomplete for cities. """
+    """Autocomplete for cities."""
     query = request.args.get("query")
 
     redis_key = f"autocomplete_cities|{query}"
@@ -103,7 +103,7 @@ def autocomplete_cities():
 
 @app.route("/ajax/airports")
 def airports():
-    """ Find closest airports. """
+    """Find closest airports."""
     lat = float(request.args.get("lat"))
     lng = float(request.args.get("lng"))
     limit = int(request.args.get("limit")) or 1
@@ -166,7 +166,7 @@ def airports():
 
 @app.route("/ajax/routes")
 def routes():
-    """ Find routes between two airports. """
+    """Find routes between two airports."""
     from_airport = int(request.args.get("from_airport"))
     to_airport = int(request.args.get("to_airport"))
 
@@ -190,7 +190,7 @@ def routes():
 
 @app.route("/ajax/get-cities")
 def get_cities():
-    """ Get cities in specified area. """
+    """Get cities in specified area."""
     ne_lng = float(request.args.get("ne_lng"))
     ne_lat = float(request.args.get("ne_lat"))
     sw_lng = float(request.args.get("sw_lng"))

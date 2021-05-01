@@ -6,7 +6,7 @@ from manage import import_cities, import_airlines
 
 
 class AirticketsModelsTest(BaseTestCase):
-    """ Test models and manage.py commands. """
+    """Test models and manage.py commands."""
 
     def test_deg2rad(self):
         self.assertEqual(_deg2rad(180), math.pi)
@@ -84,7 +84,7 @@ class AirticketsModelsTest(BaseTestCase):
         )
 
     def test_commands_import_airlines(self):
-        """ Test Airline model and import_airlines command. """
+        """Test Airline model and import_airlines command."""
         import_airlines(rows=10)
         airline = Airline.query.filter_by(name="3D Aviation").first()
         self.assertTrue(airline)
