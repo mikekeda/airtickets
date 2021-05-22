@@ -1,8 +1,8 @@
 import math
 
+from manage import app, import_cities, import_airlines
 from app.models import _deg2rad, City, CityName, Airline, get_distance
 from app.tests import BaseTestCase
-from manage import import_cities, import_airlines
 
 
 class AirticketsModelsTest(BaseTestCase):
@@ -16,7 +16,9 @@ class AirticketsModelsTest(BaseTestCase):
         self.assertEqual(round(dist, 12), 690.616317346638)
 
     def test_commands_import_cities(self):
-        import_cities(rows=10)
+        runner = app.test_cli_runner()
+        result = runner.invoke(import_cities, ["--rows", "10"])
+        assert result.exit_code == 0
 
         # Test City model.
         city = City.query.filter_by(gns_ufi=10735690).first()
@@ -85,7 +87,10 @@ class AirticketsModelsTest(BaseTestCase):
 
     def test_commands_import_airlines(self):
         """Test Airline model and import_airlines command."""
-        import_airlines(rows=10)
+        runner = app.test_cli_runner()
+        result = runner.invoke(import_airlines, ["--rows", "10"])
+        assert result.exit_code == 0
+
         airline = Airline.query.filter_by(name="3D Aviation").first()
         self.assertTrue(airline)
 

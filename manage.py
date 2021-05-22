@@ -8,8 +8,7 @@ import os
 from time import time
 from typing import Dict, Tuple, Optional
 
-from flask_script import Manager, Server
-from flask_migrate import Migrate, MigrateCommand
+import click
 from sqlalchemy.orm import joinedload
 from elasticsearch import helpers
 from elasticsearch.exceptions import (
@@ -24,14 +23,6 @@ from app.models import City, CityName, Airline, Airport, Route, get_distance
 current_dir = os.path.dirname(os.path.realpath(__file__))
 chunk_size = 1000
 
-manager = Manager(app)
-migrate = Migrate(app, db)
-
-# Run local server
-manager.add_command("runserver", Server("localhost", port=5000))
-
-manager.add_command("db", MigrateCommand)
-
 
 def timeit(f):
     @wraps(f)
@@ -45,9 +36,11 @@ def timeit(f):
     return wrap
 
 
-@manager.command
+@app.cli.command("import-cities")
+@click.option("--file-name", type=click.Path(), default="csv_data/worldcities.csv")
+@click.option("--rows", type=click.INT, default=None)
 @timeit
-def import_cities(file_name="csv_data/worldcities.csv", rows=None):
+def import_cities(file_name: str, rows: int) -> None:
     """Import cities."""
     city_cache: Dict[Tuple[float, float], Optional[int]] = {}
     populations_cache = defaultdict(list)
@@ -179,9 +172,11 @@ def import_cities(file_name="csv_data/worldcities.csv", rows=None):
         db.session.commit()  # save last chunk
 
 
-@manager.command
+@app.cli.command("import-airlines")
+@click.option("--file-name", type=click.Path(), default="csv_data/airlines.csv")
+@click.option("--rows", type=click.INT, default=None)
 @timeit
-def import_airlines(file_name="csv_data/airlines.csv", rows=None):
+def import_airlines(file_name: str, rows: int) -> None:
     if file_name[0] != "/":
         file_name = current_dir + "/" + file_name
 
@@ -208,9 +203,10 @@ def import_airlines(file_name="csv_data/airlines.csv", rows=None):
         db.session.commit()  # save last chunk
 
 
-@manager.command
+@app.cli.command("import-airports")
+@click.option("--file-name", type=click.Path(), default="csv_data/airports.csv")
 @timeit
-def import_airports(file_name="csv_data/airports.csv"):
+def import_airports(file_name: str) -> None:
     if file_name[0] != "/":
         file_name = current_dir + "/" + file_name
 
@@ -236,9 +232,10 @@ def import_airports(file_name="csv_data/airports.csv"):
         db.session.commit()  # save last chunk
 
 
-@manager.command
+@app.cli.command("import-routes")
+@click.option("--file-name", type=click.Path(), default="csv_data/routes.csv")
 @timeit
-def import_routes(file_name="csv_data/routes.csv"):
+def import_routes(file_name: str) -> None:
     """Import routes."""
     airlines_cache = {}
     airports_cache = {}
@@ -313,7 +310,7 @@ def import_routes(file_name="csv_data/routes.csv"):
         db.session.commit()  # save last chunk
 
 
-@manager.command
+@app.cli.command("create-cities-index")
 def create_cities_index():
     items_per_page = 1000
 
@@ -363,7 +360,7 @@ def create_cities_index():
         print(page, "from", num_of_pages)
 
 
-@manager.command
+@app.cli.command("import-all")
 def import_all():
     import_cities()
     import_airlines()
@@ -371,10 +368,6 @@ def import_all():
     import_routes()
 
 
-@manager.command
+@app.cli.command("cleanup-redis")
 def cleanup_redis():
     redis_store.flushall()
-
-
-if __name__ == "__main__":
-    manager.run()
