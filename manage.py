@@ -40,7 +40,7 @@ def timeit(f):
 @click.option("--file-name", type=click.Path(), default="csv_data/worldcities.csv")
 @click.option("--rows", type=click.INT, default=None)
 @timeit
-def import_cities(file_name: str, rows: int) -> None:
+def import_cities(file_name: str, rows: Optional[int]) -> None:
     """Import cities."""
     city_cache: Dict[Tuple[float, float], Optional[int]] = {}
     populations_cache = defaultdict(list)
@@ -176,7 +176,7 @@ def import_cities(file_name: str, rows: int) -> None:
 @click.option("--file-name", type=click.Path(), default="csv_data/airlines.csv")
 @click.option("--rows", type=click.INT, default=None)
 @timeit
-def import_airlines(file_name: str, rows: int) -> None:
+def import_airlines(file_name: str, rows: Optional[int]) -> None:
     if file_name[0] != "/":
         file_name = current_dir + "/" + file_name
 
@@ -362,10 +362,10 @@ def create_cities_index():
 
 @app.cli.command("import-all")
 def import_all():
-    import_cities()
-    import_airlines()
-    import_airports()
-    import_routes()
+    import_cities("csv_data/worldcities.csv", None)
+    import_airlines("csv_data/airlines.csv", None)
+    import_airports("csv_data/airports.csv")
+    import_routes("csv_data/routes.csv")
 
 
 @app.cli.command("cleanup-redis")

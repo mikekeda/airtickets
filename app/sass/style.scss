@@ -56,6 +56,15 @@ h1.navbar-brand {
   }
 }
 
+.footer {
+  margin-top: 20px;
+  padding: 10px;
+
+  p {
+    margin: 0;
+  }
+}
+
 #technologies {
   .thumbnail {
     &:hover {
@@ -91,18 +100,6 @@ h1.navbar-brand {
 }
 
 .has-feedback.has-clear {
-  &.has-empty-value {
-    /* Do not display clear button if field has empty value */
-    .form-control-clear {
-      display: none;
-    }
-  }
-
-  /* Remove Internet Explorer native clear button */
-  input::-ms-clear {
-    display: none;
-  }
-
   .form-control-clear {
     color: #bbb;
     color: rgba(0, 0, 0, 0.4);
@@ -118,6 +115,18 @@ h1.navbar-brand {
       color: rgba(0, 0, 0, 0.7);
       cursor: pointer;
     }
+  }
+
+  &.has-empty-value {
+    /* Do not display clear button if field has empty value */
+    .form-control-clear {
+      display: none;
+    }
+  }
+
+  /* Remove Internet Explorer native clear button */
+  input::-ms-clear {
+    display: none;
   }
 
   .glyphicon-refresh {
@@ -191,15 +200,6 @@ select.form-control {
 @-webkit-keyframes spin2 {
   from { -webkit-transform: rotate(0deg); }
   to { -webkit-transform: rotate(360deg); }
-}
-
-.footer {
-  margin-top: 20px;
-  padding: 10px;
-
-  p {
-    margin: 0;
-  }
 }
 
 @media (min-width: 768px) {
