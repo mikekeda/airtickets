@@ -1,9 +1,8 @@
-coverage==6.0.2
-django-debug-toolbar==3.2.2
-django-debug-toolbar-line-profiling==0.7.1
--e git://github.com/mikekeda/django-jenkins.git#egg=django-jenkins
+Flask-DebugToolbar==0.11.0
+Flask-Testing==0.8.1
 pep8==1.7.1
-pyflakes==2.4.0
+pycodestyle==2.8.0
 pylint==2.11.1
-pylint-django==2.4.4
-pylint-plugin-utils==0.6
+pylint-flask==0.6
+pytest==6.2.5
+pytest-cov==3.0.0
