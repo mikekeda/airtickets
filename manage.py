@@ -30,7 +30,7 @@ def timeit(f):
         ts = time()
         result = f(*args, **kw)
         te = time()
-        print("func:%r args:[%r, %r] took: %2.4f sec" % (f.__name__, args, kw, te - ts))
+        print(f"func:{f.__name__} args:[{args}, {kw}] took: {round(te - ts, 3)} sec")
         return result
 
     return wrap
@@ -51,7 +51,7 @@ def import_cities(file_name: str, rows: Optional[int]) -> None:
 
     # Populate cityname_cache.
     print("Populate cityname_cache...")
-    with open(file_name, "r") as csvfile:
+    with open(file_name, "r", encoding="utf-8") as csvfile:
         for idx, row in enumerate(csv.DictReader(csvfile)):
             if rows and idx + 1 > rows:
                 break  # the rows limit was achieved - stop import
@@ -68,7 +68,9 @@ def import_cities(file_name: str, rows: Optional[int]) -> None:
 
     # Populate populations_cache.
     print("Populate populations_cache...")
-    with open(current_dir + "/csv_data/cities-populations.csv", "r") as csvfile:
+    with open(
+        current_dir + "/csv_data/cities-populations.csv", "r", encoding="utf-8"
+    ) as csvfile:
         csvreader = csv.DictReader(csvfile)
         for idx, row in enumerate(csvreader):
             if rows and idx + 1 > rows:
@@ -91,7 +93,7 @@ def import_cities(file_name: str, rows: Optional[int]) -> None:
                         )
 
     # Create a City.
-    with open(file_name, "r") as csvfile:
+    with open(file_name, "r", encoding="utf-8") as csvfile:
         basket = []
         for idx, row in enumerate(csv.DictReader(csvfile)):
             if rows and idx + 1 > rows:
@@ -146,7 +148,7 @@ def import_cities(file_name: str, rows: Optional[int]) -> None:
         )  # set cache
 
     # Create a CityName.
-    with open(file_name, "r") as csvfile:
+    with open(file_name, "r", encoding="utf-8") as csvfile:
         basket = []
         for idx, row in enumerate(csv.DictReader(csvfile)):
             if rows and idx + 1 > rows:
@@ -180,7 +182,7 @@ def import_airlines(file_name: str, rows: Optional[int]) -> None:
     if file_name[0] != "/":
         file_name = current_dir + "/" + file_name
 
-    with open(file_name, "r") as csvfile:
+    with open(file_name, "r", encoding="utf-8") as csvfile:
         csvreader = csv.DictReader(csvfile)
         for idx, row in enumerate(csvreader):
             if rows and idx + 1 > rows:
@@ -210,7 +212,7 @@ def import_airports(file_name: str) -> None:
     if file_name[0] != "/":
         file_name = current_dir + "/" + file_name
 
-    with open(file_name, "r") as csvfile:
+    with open(file_name, "r", encoding="utf-8") as csvfile:
         csvreader = csv.DictReader(csvfile)
         for idx, row in enumerate(csvreader):
             # Create Airline.
@@ -243,7 +245,7 @@ def import_routes(file_name: str) -> None:
     if file_name[0] != "/":
         file_name = current_dir + "/" + file_name
 
-    with open(file_name, "r") as csvfile:
+    with open(file_name, "r", encoding="utf-8") as csvfile:
         csvreader = csv.DictReader(csvfile)
         for idx, row in enumerate(csvreader):
 

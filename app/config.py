@@ -15,7 +15,7 @@ def get_env_var(name: str, default: str = "") -> str:
 
         res = requests.get(
             "http://metadata.google.internal/computeMetadata/"
-            "v1/instance/attributes/{}".format(name),
+            f"v1/instance/attributes/{name}",
             headers={"Metadata-Flavor": "Google"},
         )
         if res.status_code == 200:
@@ -27,11 +27,10 @@ def get_env_var(name: str, default: str = "") -> str:
 
 class DefaultConfig:
     # PostgreSQL configurations.
-    SQLALCHEMY_DATABASE_URI = "postgresql://{}:{}@{}/{}".format(
-        get_env_var("DB_USER", "airtickets"),
-        get_env_var("DB_PASSWORD", "airtickets"),
-        get_env_var("DB_HOST", "127.0.0.1"),
-        get_env_var("DB_NAME", "airtickets"),
+    SQLALCHEMY_DATABASE_URI = (
+        "postgresql://"
+        f"{get_env_var('DB_USER', 'airtickets')}:{get_env_var('DB_PASSWORD', 'airtickets')}"
+        f"@{get_env_var('DB_HOST', '127.0.0.1')}/{get_env_var('DB_NAME', 'airtickets')}"
     )
 
     REDIS_URL = "redis://:@localhost:6379/5"
@@ -51,11 +50,10 @@ class TestConfig(DefaultConfig):
     TESTING = True
 
     # PostgreSQL configurations.
-    SQLALCHEMY_DATABASE_URI = "postgresql://{}:{}@{}/{}".format(
-        get_env_var("TEST_DB_USER", "airtickets"),
-        get_env_var("TEST_DB_PASSWORD", "airtickets"),
-        get_env_var("DB_HOST", "127.0.0.1"),
-        get_env_var("TEST_DB_NAME", "build_airtickets"),
+    SQLALCHEMY_DATABASE_URI = (
+        "postgresql://"
+        f"{get_env_var('TEST_DB_USER', 'airtickets')}:{get_env_var('TEST_DB_PASSWORD', 'airtickets')}"
+        f"@{get_env_var('DB_HOST', '127.0.0.1')}/{get_env_var('TEST_DB_NAME', 'build_airtickets')}"
     )
 
     REDIS_URL = "redis://:@localhost:6379/6"
