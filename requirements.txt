@@ -1,7 +1,7 @@
 alembic==1.7.6
 click==8.0.3
-elasticsearch==7.17.0
-Flask==2.0.2
+elasticsearch==8.0.0
+Flask==2.0.3
 Flask-Elasticsearch==0.2.5
 Flask-Redis==0.4.0
 Flask-SQLAlchemy==2.5.1
