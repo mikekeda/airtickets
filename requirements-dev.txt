@@ -1,4 +1,4 @@
-Flask-DebugToolbar==0.12.1
+Flask-DebugToolbar==0.11.0
 Flask-Testing==0.8.1
 pep8==1.7.1
 pycodestyle==2.8.0
