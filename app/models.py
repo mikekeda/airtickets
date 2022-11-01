@@ -8,7 +8,7 @@ from typing import Any
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.sql import text
 
-from app import db, engine
+from app import app, db, engine
 
 
 def _deg2rad(deg: float) -> float:
@@ -322,4 +322,5 @@ class Airline(BaseModel):
         }
 
 
-db.create_all()
+with app.app_context():
+    db.create_all()
