@@ -36,7 +36,7 @@ def timeit(f):
     return wrap
 
 
-@app.cli.command("import-cities")
+@app.cli.command()
 @click.option("--file-name", type=click.Path(), default="csv_data/worldcities.csv")
 @click.option("--rows", type=click.INT, default=None)
 @timeit
@@ -174,7 +174,7 @@ def import_cities(file_name: str, rows: Optional[int]) -> None:
         db.session.commit()  # save last chunk
 
 
-@app.cli.command("import-airlines")
+@app.cli.command()
 @click.option("--file-name", type=click.Path(), default="csv_data/airlines.csv")
 @click.option("--rows", type=click.INT, default=None)
 @timeit
@@ -205,7 +205,7 @@ def import_airlines(file_name: str, rows: Optional[int]) -> None:
         db.session.commit()  # save last chunk
 
 
-@app.cli.command("import-airports")
+@app.cli.command()
 @click.option("--file-name", type=click.Path(), default="csv_data/airports.csv")
 @timeit
 def import_airports(file_name: str) -> None:
@@ -234,7 +234,7 @@ def import_airports(file_name: str) -> None:
         db.session.commit()  # save last chunk
 
 
-@app.cli.command("import-routes")
+@app.cli.command()
 @click.option("--file-name", type=click.Path(), default="csv_data/routes.csv")
 @timeit
 def import_routes(file_name: str) -> None:
@@ -312,8 +312,8 @@ def import_routes(file_name: str) -> None:
         db.session.commit()  # save last chunk
 
 
-@app.cli.command("create-cities-index")
-def create_cities_index():
+@app.cli.command()
+def create_cities_index() -> None:
     items_per_page = 1000
 
     index_body = {
@@ -362,14 +362,19 @@ def create_cities_index():
         print(page, "from", num_of_pages)
 
 
-@app.cli.command("import-all")
-def import_all():
-    import_cities("csv_data/worldcities.csv", None)
-    import_airlines("csv_data/airlines.csv", None)
-    import_airports("csv_data/airports.csv")
-    import_routes("csv_data/routes.csv")
+@app.cli.command()
+@click.pass_context
+def import_all(ctx: click.Context) -> None:
+    ctx.invoke(import_cities)
+    ctx.invoke(import_airlines)
+    ctx.invoke(import_airports)
+    ctx.invoke(import_routes)
 
 
-@app.cli.command("cleanup-redis")
+@app.cli.command()
 def cleanup_redis():
     redis_store.flushall()
+
+
+if __name__ == "__main__":
+    app.cli()
