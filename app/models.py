@@ -94,10 +94,10 @@ class Airport(BaseModel):
         )
 
         raw_data = conn.execute(
-            s, latitude=lat, longitude=lng, limit=limit, offset=offset
+            s, dict(latitude=lat, longitude=lng, limit=limit, offset=offset)
         ).fetchall()
 
-        return [dict(row) for row in raw_data]
+        return [row._asdict() for row in raw_data]
 
 
 class Route(BaseModel):
@@ -150,7 +150,9 @@ class Route(BaseModel):
         )
 
         conn = engine.connect()
-        raw_data = conn.execute(s, source=source, destination=destination).fetchall()
+        raw_data = conn.execute(
+            s, dict(source=source, destination=destination)
+        ).fetchall()
         conn.close()
 
         needed_cities = list(reduce(lambda a, b: a | set(b["path"]), raw_data, set()))
@@ -202,7 +204,7 @@ class City(BaseModel):
     def get_closest_cities(
         lat: float, lng: float, limit: int = 1, offset: int = 0
     ) -> list[dict]:
-        """Get closest cities by coordinates."""
+        """Get the closest cities by coordinates."""
         result = []
         conn = engine.connect()
 
@@ -221,17 +223,17 @@ class City(BaseModel):
         )
 
         raw_data = conn.execute(
-            s, latitude=lat, longitude=lng, limit=limit, offset=offset
-        ).fetchall()
+            s, dict(latitude=lat, longitude=lng, limit=limit, offset=offset)
+        )
 
         for raw_item in raw_data:
             item = {
-                "id": raw_item["id"],
-                "country_code": raw_item["country_code"],
-                "data": {"lat": raw_item["latitude"], "lng": raw_item["longitude"]},
-                "population": raw_item["population"],
-                "value": raw_item["name"],
-                "distance": raw_item["distance"],
+                "id": raw_item.id,
+                "country_code": raw_item.country_code,
+                "data": {"lat": raw_item.latitude, "lng": raw_item.longitude},
+                "population": raw_item.population,
+                "value": raw_item.name,
+                "distance": raw_item.distance,
             }
             result.append(item)
 

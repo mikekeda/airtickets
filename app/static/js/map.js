@@ -43,7 +43,7 @@ function processCitySelect(suggestion, el, findClosestCity) {
                 string = '<option value="' + data.airports[i].id + '">' + airportName + '</option>';
                 $(el).siblings("select").append(string);
             }
-            if (findClosestCity && data.closest_city.value) {
+            if (findClosestCity && !!data.closest_city && data.closest_city.value) {
                 $(el).val(data.closest_city.value);
                 addMarker(data.closest_city.value, data.closest_city.data.lat, data.closest_city.data.lng);
             }

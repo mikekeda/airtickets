@@ -34,11 +34,11 @@ class AirticketsViewTest(BaseTestCase):
     def test_airports_page(self):
         def test():
             response = self.client.get(
-                "/ajax/airports?lat=49.0&lng=23.0" "&limit=5&find_closest_city=true"
+                "/ajax/airports?lat=49.0&lng=23.0&limit=5&find_closest_city=true"
             )
             self.assert200(response)
 
-            response = self.client.get("/ajax/airports?lat=49.0&lng=23.0" "&limit=7")
+            response = self.client.get("/ajax/airports?lat=49.0&lng=23.0&limit=7")
             self.assert200(response)
 
         test()  # first run.

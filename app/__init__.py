@@ -36,8 +36,6 @@ except ImportError:
 # pylint: disable=E1101
 app.jinja_env.globals["static"] = lambda filename: url_for("static", filename=filename)
 
-db.init_app(app)
-
 # Disable elasticsearch warnings.
 logger = logging.getLogger("elasticsearch")
 logger.setLevel(logging.ERROR)
