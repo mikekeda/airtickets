@@ -248,7 +248,6 @@ def import_routes(file_name: str) -> None:
     with open(file_name, "r", encoding="utf-8") as csvfile:
         csvreader = csv.DictReader(csvfile)
         for idx, row in enumerate(csvreader):
-
             if not all(
                 [row["Source airport"], row["Destination airport"], row["Airline"]]
             ):
