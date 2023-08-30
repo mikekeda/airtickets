@@ -97,6 +97,8 @@ class Airport(BaseModel):
             s, dict(latitude=lat, longitude=lng, limit=limit, offset=offset)
         ).fetchall()
 
+        conn.close()
+
         return [row._asdict() for row in raw_data]
 
 

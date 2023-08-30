@@ -52,8 +52,8 @@ class TestConfig(DefaultConfig):
     # PostgreSQL configurations.
     SQLALCHEMY_DATABASE_URI = (
         "postgresql://"
-        f"{get_env_var('TEST_DB_USER', 'airtickets')}:{get_env_var('TEST_DB_PASSWORD', 'airtickets')}"
-        f"@{get_env_var('DB_HOST', '127.0.0.1')}/{get_env_var('TEST_DB_NAME', 'build_airtickets')}"
+        f"{get_env_var('TEST_DB_USER', 'airtickets_admin')}:{get_env_var('TEST_DB_PASSWORD', 'airtickets')}"
+        f"@{get_env_var('DB_HOST', '127.0.0.1')}/{get_env_var('TEST_DB_NAME', 'test_airtickets')}"
     )
 
     REDIS_URL = "redis://:@localhost:6379/6"

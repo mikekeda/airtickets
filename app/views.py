@@ -103,7 +103,7 @@ def autocomplete_cities():
 
 @app.route("/ajax/airports")
 def airports():
-    """Find closest airports."""
+    """Find airports nearby."""
     lat = float(request.args.get("lat"))
     lng = float(request.args.get("lng"))
     limit = int(request.args.get("limit")) or 1
