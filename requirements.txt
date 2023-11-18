@@ -1,6 +1,6 @@
-alembic==1.12.0
+alembic==1.12.1
 click==8.1.7
-elasticsearch==8.10.1
+elasticsearch==8.11.0
 Flask==3.0.0
 Flask-Elasticsearch==0.2.5
 Flask-Redis==0.4.0
@@ -13,4 +13,4 @@ pytz==2023.3.post1
 redis==5.0.1
 requests==2.31.0
 Shapely==2.0.2
-SQLAlchemy==2.0.22
+SQLAlchemy==2.0.23
