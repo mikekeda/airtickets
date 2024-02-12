@@ -3,7 +3,6 @@ import logging
 from flask import Flask, url_for
 from flask_sqlalchemy import SQLAlchemy
 from flask_redis import FlaskRedis
-from flask_elasticsearch import FlaskElasticsearch
 from sqlalchemy import create_engine
 
 from app.config import get_env_var, DefaultConfig, TestConfig
@@ -17,11 +16,7 @@ else:
 app.debug = bool(get_env_var("DEBUG", "True"))
 
 db = SQLAlchemy(app)
-es = FlaskElasticsearch(app)
-try:
-    es.ping()
-except TypeError:
-    es = None
+es = None
 redis_store = FlaskRedis(app)
 engine = create_engine(app.config["SQLALCHEMY_DATABASE_URI"], echo=False)
 
