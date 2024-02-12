@@ -1,6 +1,7 @@
 """
 This script provides some easy to use commands.
 """
+
 import csv
 from collections import defaultdict
 from functools import wraps

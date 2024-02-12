@@ -1,6 +1,7 @@
 """
 Gunicorn config.
 """
+
 bind = "unix:/uwsgi/airtickets.sock"
 workers = 1
 timeout = 30
