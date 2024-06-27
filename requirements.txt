@@ -1,4 +1,4 @@
-alembic==1.13.1
+alembic==1.13.2
 click==8.1.7
 elasticsearch==8.14.0
 Flask==3.0.3
@@ -10,7 +10,7 @@ Jinja2==3.1.4
 psycopg2-binary==2.9.9
 python-dateutil==2.9.0.post0
 pytz==2024.1
-redis==5.0.6
+redis==5.0.7
 requests==2.32.3
 Shapely==2.0.4
 SQLAlchemy==2.0.31
