@@ -1,6 +1,6 @@
 alembic==1.16.1
 click==8.2.1
-elasticsearch==9.0.1
+elasticsearch==9.0.2
 Flask==3.1.1
 Flask-Elasticsearch==0.2.5
 Flask-Redis==0.4.0
@@ -10,7 +10,7 @@ Jinja2==3.1.6
 psycopg2-binary==2.9.10
 python-dateutil==2.9.0.post0
 pytz==2025.2
-redis==6.1.0
+redis==6.2.0
 requests==2.32.3
 Shapely==2.1.1
 SQLAlchemy==2.0.41

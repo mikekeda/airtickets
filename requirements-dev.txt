@@ -4,5 +4,5 @@ pep8==1.7.1
 pycodestyle==2.13.0
 pylint==3.3.7
 pylint-flask==0.6
-pytest==8.3.5
+pytest==8.4.0
 pytest-cov==6.1.1
