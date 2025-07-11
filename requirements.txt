@@ -1,4 +1,4 @@
-alembic==1.16.2
+alembic==1.16.4
 click==8.2.1
 elasticsearch==9.0.2
 Flask==3.1.1
