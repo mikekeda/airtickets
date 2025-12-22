@@ -13,4 +13,4 @@ pytz==2025.2
 redis==7.1.0
 requests==2.32.5
 Shapely==2.1.2
-SQLAlchemy==2.0.44
+SQLAlchemy==2.0.45
