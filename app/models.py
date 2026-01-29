@@ -113,8 +113,7 @@ class Route(BaseModel):
     @staticmethod
     def get_path(source: int, destination: int) -> dict[int, list]:
         result = defaultdict(list)
-        s = text(
-            """
+        s = text("""
         WITH RECURSIVE search_graph(
             source, -- point 1
             destination, -- point 2
@@ -148,8 +147,7 @@ class Route(BaseModel):
         WHERE destination = :destination
         ORDER BY distance
         LIMIT 10
-        """
-        )
+        """)
 
         conn = engine.connect()
         raw_data = conn.execute(

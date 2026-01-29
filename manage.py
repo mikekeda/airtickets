@@ -20,7 +20,6 @@ from elasticsearch.exceptions import (
 from app import app, db, es, redis_store
 from app.models import City, CityName, Airline, Airport, Route, get_distance
 
-
 current_dir = os.path.dirname(os.path.realpath(__file__))
 chunk_size = 1000
 
