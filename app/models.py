@@ -21,9 +21,9 @@ def get_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     radius = 6371  # radius of the earth in km
     d_lat = _deg2rad(lat2 - lat1)
     d_lon = _deg2rad(lon2 - lon1)
-    dummy_a = math.sin(d_lat / 2) * math.sin(d_lat / 2) + math.cos(
-        _deg2rad(lat1)
-    ) * math.cos(_deg2rad(lat2)) * math.sin(d_lon / 2) * math.sin(d_lon / 2)
+    dummy_a = math.sin(d_lat / 2) * math.sin(d_lat / 2) + math.cos(_deg2rad(lat1)) * math.cos(
+        _deg2rad(lat2)
+    ) * math.sin(d_lon / 2) * math.sin(d_lon / 2)
     dummy_c = 2 * math.atan2(math.sqrt(dummy_a), math.sqrt(1 - dummy_a))
     distance = radius * dummy_c  # distance in km
 
@@ -75,9 +75,7 @@ class Airport(BaseModel):
     tz_database_time_zone = db.Column(db.String())
 
     @staticmethod
-    def get_closest_airports(
-        lat: float, lng: float, limit: int = 1, offset: int = 0
-    ) -> list[dict]:
+    def get_closest_airports(lat: float, lng: float, limit: int = 1, offset: int = 0) -> list[dict]:
         conn = engine.connect()
 
         s = text(
@@ -93,9 +91,7 @@ class Airport(BaseModel):
             "LIMIT :limit OFFSET :offset"
         )
 
-        raw_data = conn.execute(
-            s, dict(latitude=lat, longitude=lng, limit=limit, offset=offset)
-        ).fetchall()
+        raw_data = conn.execute(s, dict(latitude=lat, longitude=lng, limit=limit, offset=offset)).fetchall()
 
         conn.close()
 
@@ -150,9 +146,7 @@ class Route(BaseModel):
         """)
 
         conn = engine.connect()
-        raw_data = conn.execute(
-            s, dict(source=source, destination=destination)
-        ).fetchall()
+        raw_data = conn.execute(s, dict(source=source, destination=destination)).fetchall()
         conn.close()
 
         needed_cities = list(reduce(lambda a, b: a | set(b["path"]), raw_data, set()))
@@ -201,9 +195,7 @@ class City(BaseModel):
     city_names = db.relationship("CityName", backref=db.backref("city_names"))
 
     @staticmethod
-    def get_closest_cities(
-        lat: float, lng: float, limit: int = 1, offset: int = 0
-    ) -> list[dict]:
+    def get_closest_cities(lat: float, lng: float, limit: int = 1, offset: int = 0) -> list[dict]:
         """Get the closest cities by coordinates."""
         result = []
         conn = engine.connect()
@@ -222,9 +214,7 @@ class City(BaseModel):
             "LIMIT :limit OFFSET :offset"
         )
 
-        raw_data = conn.execute(
-            s, dict(latitude=lat, longitude=lng, limit=limit, offset=offset)
-        )
+        raw_data = conn.execute(s, dict(latitude=lat, longitude=lng, limit=limit, offset=offset))
 
         for raw_item in raw_data:
             item = {

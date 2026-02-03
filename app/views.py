@@ -21,9 +21,7 @@ BASE_TEMPLATES_DIR = os.path.dirname(os.path.abspath(__file__)) + "/templates"
 @app.context_processor
 def select_parent_template() -> dict[str, str]:
     """Check if it's ajax, if so no need any parent template."""
-    parent_template = (
-        "dummy_parent.html" if request.path[:6] == "/ajax/" else "base.html"
-    )
+    parent_template = "dummy_parent.html" if request.path[:6] == "/ajax/" else "base.html"
     return {"parent_template": parent_template}
 
 
@@ -73,11 +71,7 @@ def autocomplete_cities():
             size=10,
             doc_type="CityName",
             body={
-                "query": {
-                    "bool": {
-                        "must": {"match_phrase_prefix": {"value": {"query": query}}}
-                    }
-                },
+                "query": {"bool": {"must": {"match_phrase_prefix": {"value": {"query": query}}}}},
                 "sort": {"population": {"order": "desc"}},
             },
         )
@@ -109,9 +103,7 @@ def airports():
     limit = int(request.args.get("limit")) or 1
     find_closest_city = request.args.get("find_closest_city") == "true"
 
-    redis_key = "|".join(
-        ["airports", str(lat), str(lng), str(limit), str(find_closest_city)]
-    )
+    redis_key = "|".join(["airports", str(lat), str(lng), str(limit), str(find_closest_city)])
 
     try:
         result = redis_store.get(redis_key)
@@ -154,9 +146,7 @@ def airports():
             )
             result["closest_city"] = cities["hits"]["hits"][0]["_source"]
         except (ElasticConnectionError, NotFoundError, AttributeError):
-            result["closest_city"] = next(
-                iter(City.get_closest_cities(lat, lng, 1) or []), None
-            )
+            result["closest_city"] = next(iter(City.get_closest_cities(lat, lng, 1) or []), None)
 
     if redis_is_connected:
         redis_store.set(redis_key, pickle.dumps(result), 86400)
@@ -196,9 +186,7 @@ def get_cities():
     sw_lng = float(request.args.get("sw_lng"))
     sw_lat = float(request.args.get("sw_lat"))
 
-    redis_key = "|".join(
-        ["get_cities", str(ne_lng), str(ne_lat), str(sw_lng), str(sw_lat)]
-    )
+    redis_key = "|".join(["get_cities", str(ne_lng), str(ne_lat), str(sw_lng), str(sw_lat)])
 
     # Try to find with Redis.
     try:
@@ -221,12 +209,7 @@ def get_cities():
                     "bool": {
                         "must": {
                             "geo_distance": {
-                                "distance": str(
-                                    get_distance(ne_lat, ne_lng, sw_lat, sw_lng)
-                                    / 2
-                                    / math.sqrt(2)
-                                )
-                                + "km",
+                                "distance": str(get_distance(ne_lat, ne_lng, sw_lat, sw_lng) / 2 / math.sqrt(2)) + "km",
                                 "location": {
                                     "lat": (ne_lat + sw_lat) / 2,
                                     "lon": (ne_lng + sw_lng) / 2,
