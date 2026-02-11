@@ -14,7 +14,8 @@ def get_env_var(name: str, default: str = "") -> str:
             return res
 
         res = requests.get(
-            "http://metadata.google.internal/computeMetadata/" f"v1/instance/attributes/{name}",
+            "http://metadata.google.internal/computeMetadata/"
+            f"v1/instance/attributes/{name}",
             headers={"Metadata-Flavor": "Google"},
         )
         if res.status_code == 200:

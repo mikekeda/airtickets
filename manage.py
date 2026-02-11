@@ -62,11 +62,15 @@ def import_cities(file_name: str, rows: Optional[int]) -> None:
         cityname_cache = defaultdict(list)
         for location, names in _cityname_cache.items():
             for name in names:
-                cityname_cache[name].extend([{"name": n, "location": location} for n in names])
+                cityname_cache[name].extend(
+                    [{"name": n, "location": location} for n in names]
+                )
 
     # Populate populations_cache.
     print("Populate populations_cache...")
-    with open(current_dir + "/csv_data/cities-populations.csv", "r", encoding="utf-8") as csvfile:
+    with open(
+        current_dir + "/csv_data/cities-populations.csv", "r", encoding="utf-8"
+    ) as csvfile:
         csvreader = csv.DictReader(csvfile)
         for idx, row in enumerate(csvreader):
             if rows and idx + 1 > rows:
@@ -75,7 +79,10 @@ def import_cities(file_name: str, rows: Optional[int]) -> None:
             if row["Population"]:
                 location = (float(row["Latitude"]), float(row["Longitude"]))
                 for city in cityname_cache[row["City"].lower()]:
-                    if abs(city["location"][0] - location[0]) < 0.03 and abs(city["location"][1] - location[1]) < 0.03:
+                    if (
+                        abs(city["location"][0] - location[0]) < 0.03
+                        and abs(city["location"][1] - location[1]) < 0.03
+                    ):
                         populations_cache[city["name"]].append(
                             {
                                 "latitude": float(row["Latitude"]),
@@ -121,10 +128,14 @@ def import_cities(file_name: str, rows: Optional[int]) -> None:
                 )
                 city_cache[location] = None  # avoid adding same cities to database
                 if len(basket) >= chunk_size:
-                    db.session.bulk_save_objects(basket, return_defaults=True)  # we need to return ids
+                    db.session.bulk_save_objects(
+                        basket, return_defaults=True
+                    )  # we need to return ids
                     db.session.commit()  # save chunk
 
-                    city_cache.update({(c.latitude, c.longitude): c.id for c in basket})  # set cache
+                    city_cache.update(
+                        {(c.latitude, c.longitude): c.id for c in basket}
+                    )  # set cache
 
                     basket = []  # empty basket
 
@@ -132,7 +143,9 @@ def import_cities(file_name: str, rows: Optional[int]) -> None:
 
         db.session.bulk_save_objects(basket, return_defaults=True)
         db.session.commit()  # save last chunk
-        city_cache.update({(c.latitude, c.longitude): c.id for c in basket})  # set cache
+        city_cache.update(
+            {(c.latitude, c.longitude): c.id for c in basket}
+        )  # set cache
 
     # Create a CityName.
     with open(file_name, "r", encoding="utf-8") as csvfile:
@@ -235,7 +248,9 @@ def import_routes(file_name: str) -> None:
     with open(file_name, "r", encoding="utf-8") as csvfile:
         csvreader = csv.DictReader(csvfile)
         for idx, row in enumerate(csvreader):
-            if not all([row["Source airport"], row["Destination airport"], row["Airline"]]):
+            if not all(
+                [row["Source airport"], row["Destination airport"], row["Airline"]]
+            ):
                 print("incorrect row")
                 continue
 
@@ -253,7 +268,9 @@ def import_routes(file_name: str) -> None:
             if row["Source airport"] in airports_cache:
                 source_airport = airports_cache[row["Source airport"]]
             else:
-                source_airport = Airport.query.filter(Airport.iata_faa == row["Source airport"]).first()
+                source_airport = Airport.query.filter(
+                    Airport.iata_faa == row["Source airport"]
+                ).first()
                 airports_cache[row["Source airport"]] = source_airport
 
             if not source_airport:
@@ -263,7 +280,9 @@ def import_routes(file_name: str) -> None:
             if row["Destination airport"] in airports_cache:
                 destination_airport = airports_cache[row["Destination airport"]]
             else:
-                destination_airport = Airport.query.filter(Airport.iata_faa == row["Destination airport"]).first()
+                destination_airport = Airport.query.filter(
+                    Airport.iata_faa == row["Destination airport"]
+                ).first()
                 airports_cache[row["Destination airport"]] = destination_airport
 
             if not destination_airport:
@@ -285,7 +304,9 @@ def import_routes(file_name: str) -> None:
                 equipment=row["Equipment"],
             ).save(idx % chunk_size == 0)
 
-            print(idx, source_airport.airport_name, "-", destination_airport.airport_name)
+            print(
+                idx, source_airport.airport_name, "-", destination_airport.airport_name
+            )
 
         db.session.commit()  # save last chunk
 
@@ -330,7 +351,10 @@ def create_cities_index() -> None:
     for page in range(num_of_pages):
         docs = []
         for city_name in (
-            CityName.query.options(joinedload(CityName.city)).offset(page * items_per_page).limit(items_per_page).all()
+            CityName.query.options(joinedload(CityName.city))
+            .offset(page * items_per_page)
+            .limit(items_per_page)
+            .all()
         ):
             docs.append(city_name.elastic_serialize())
         helpers.bulk(es, docs)

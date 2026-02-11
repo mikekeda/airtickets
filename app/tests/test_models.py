@@ -56,11 +56,15 @@ class AirticketsModelsTest(BaseTestCase):
         )
 
         # Test CityName model.
-        city_name = CityName.query.filter_by(name="Sharan", lang="latin", city_id=city.id).first()
+        city_name = CityName.query.filter_by(
+            name="Sharan", lang="latin", city_id=city.id
+        ).first()
         assert city_name
 
         # Test CityName serialize() method.
-        self.assertDictEqual(city_name.serialize(), {"name": "Sharan", "city_id": city.id})
+        self.assertDictEqual(
+            city_name.serialize(), {"name": "Sharan", "city_id": city.id}
+        )
         # Test CityName autocomplete_serialize() method.
         expected = {
             "value": "Sharan",
@@ -68,7 +72,9 @@ class AirticketsModelsTest(BaseTestCase):
         }
         self.assertDictEqual(city_name.autocomplete_serialize(), expected)
         # Test CityName elastic_serialize() method.
-        expected.update({"location": {"lat": 33.175678, "lon": 68.730449}, "population": 0})
+        expected.update(
+            {"location": {"lat": 33.175678, "lon": 68.730449}, "population": 0}
+        )
         self.assertDictEqual(
             city_name.elastic_serialize(),
             {
