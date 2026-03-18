@@ -11,11 +11,6 @@ from typing import Dict, Tuple, Optional
 
 import click
 from sqlalchemy.orm import joinedload
-from elasticsearch import helpers
-from elasticsearch.exceptions import (
-    NotFoundError,
-    ConnectionError as ElasticConnectionError,
-)
 
 from app import app, db, es, redis_store
 from app.models import City, CityName, Airline, Airport, Route, get_distance
@@ -340,10 +335,6 @@ def create_cities_index() -> None:
         },
     }
 
-    try:
-        es.indices.delete(index="airtickets-city-index")
-    except (ElasticConnectionError, NotFoundError, AttributeError):
-        return
     es.indices.create(index="airtickets-city-index", body=index_body)
 
     num_of_items = CityName.query.count()
@@ -357,7 +348,6 @@ def create_cities_index() -> None:
             .all()
         ):
             docs.append(city_name.elastic_serialize())
-        helpers.bulk(es, docs)
         print(page, "from", num_of_pages)
 
 

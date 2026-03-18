@@ -5,10 +5,6 @@ import pickle
 import math
 
 from flask import render_template, jsonify, request
-from elasticsearch.exceptions import (
-    NotFoundError,
-    ConnectionError as ElasticConnectionError,
-)
 from sqlalchemy.orm import joinedload
 from redis.exceptions import ConnectionError as RedisConnectionError
 
@@ -65,35 +61,17 @@ def autocomplete_cities():
     except RedisConnectionError:
         redis_is_connected = False
 
-    # Try to find with Elasticsearch.
-    try:
-        cities = es.search(
-            index="airtickets-city-index",
-            from_=0,
-            size=10,
-            doc_type="CityName",
-            body={
-                "query": {
-                    "bool": {
-                        "must": {"match_phrase_prefix": {"value": {"query": query}}}
-                    }
-                },
-                "sort": {"population": {"order": "desc"}},
-            },
-        )
-        result = [city["_source"] for city in cities["hits"]["hits"]]
-    except (ElasticConnectionError, NotFoundError, AttributeError):
-        # Try to find with PostgreSQL.
-        cities = (
-            CityName.query.join(City.city)
-            .filter(CityName.name.like(query + "%"))
-            .distinct(City.population, CityName.city_id)
-            .order_by(City.population.desc(), CityName.city_id)
-            .limit(10)
-            .all()
-        )
+    # Try to find with PostgresSQL.
+    cities = (
+        CityName.query.join(City.city)
+        .filter(CityName.name.like(query + "%"))
+        .distinct(City.population, CityName.city_id)
+        .order_by(City.population.desc(), CityName.city_id)
+        .limit(10)
+        .all()
+    )
 
-        result = [city.autocomplete_serialize() for city in cities]
+    result = [city.autocomplete_serialize() for city in cities]
 
     if redis_is_connected:
         redis_store.set(redis_key, pickle.dumps(result), 86400)
@@ -124,39 +102,10 @@ def airports():
     result = {"airports": Airport.get_closest_airports(lat, lng, limit)}
 
     if find_closest_city:
-        # Try to find with Elasticsearch.
-        try:
-            cities = es.search(
-                index="airtickets-city-index",
-                from_=0,
-                size=1,
-                doc_type="CityName",
-                body={
-                    "query": {
-                        "bool": {
-                            "must": {
-                                "geo_distance": {
-                                    "distance": "500km",
-                                    "location": {"lat": lat, "lon": lng},
-                                }
-                            }
-                        }
-                    },
-                    "sort": {
-                        "_geo_distance": {
-                            "location": {"lat": lat, "lon": lng},
-                            "order": "asc",
-                            "unit": "km",
-                        }
-                    },
-                    "size": 1,
-                },
-            )
-            result["closest_city"] = cities["hits"]["hits"][0]["_source"]
-        except (ElasticConnectionError, NotFoundError, AttributeError):
-            result["closest_city"] = next(
-                iter(City.get_closest_cities(lat, lng, 1) or []), None
-            )
+        # Try to find with PostgresSQL.
+        result["closest_city"] = next(
+            iter(City.get_closest_cities(lat, lng, 1) or []), None
+        )
 
     if redis_is_connected:
         redis_store.set(redis_key, pickle.dumps(result), 86400)
@@ -209,59 +158,19 @@ def get_cities():
     except RedisConnectionError:
         redis_is_connected = False
 
-    # Try to find with Elasticsearch.
-    try:
-        cities = es.search(
-            index="airtickets-city-index",
-            from_=0,
-            size=10,
-            doc_type="CityName",
-            body={
-                "query": {
-                    "bool": {
-                        "must": {
-                            "geo_distance": {
-                                "distance": str(
-                                    get_distance(ne_lat, ne_lng, sw_lat, sw_lng)
-                                    / 2
-                                    / math.sqrt(2)
-                                )
-                                + "km",
-                                "location": {
-                                    "lat": (ne_lat + sw_lat) / 2,
-                                    "lon": (ne_lng + sw_lng) / 2,
-                                },
-                            }
-                        }
-                    }
-                },
-                "sort": {"population": {"order": "desc"}},
-            },
-        )
+    # Try to find with PostgresSQL.
+    cities = (
+        City.query.options(joinedload(City.city_names))
+        .filter(City.longitude < ne_lng)
+        .filter(City.latitude < ne_lat)
+        .filter(City.longitude > sw_lng)
+        .filter(City.latitude > sw_lat)
+        .order_by(City.population.desc())
+        .limit(10)
+        .all()
+    )
 
-        result = [
-            {
-                "city_names": [city["_source"]["value"]],
-                "latitude": city["_source"]["data"]["lat"],
-                "longitude": city["_source"]["data"]["lng"],
-                "population": city["_source"]["population"],
-            }
-            for city in cities["hits"]["hits"]
-        ]
-    except (ElasticConnectionError, NotFoundError, AttributeError):
-        # Try to find with PostgreSQL.
-        cities = (
-            City.query.options(joinedload(City.city_names))
-            .filter(City.longitude < ne_lng)
-            .filter(City.latitude < ne_lat)
-            .filter(City.longitude > sw_lng)
-            .filter(City.latitude > sw_lat)
-            .order_by(City.population.desc())
-            .limit(10)
-            .all()
-        )
-
-        result = [city.serialize() for city in cities]
+    result = [city.serialize() for city in cities]
 
     if redis_is_connected:
         redis_store.set(redis_key, pickle.dumps(result), 86400)
