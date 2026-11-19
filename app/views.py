@@ -17,9 +17,7 @@ BASE_TEMPLATES_DIR = os.path.dirname(os.path.abspath(__file__)) + "/templates"
 @app.context_processor
 def select_parent_template() -> dict[str, str]:
     """Check if it's ajax, if so no need any parent template."""
-    parent_template = (
-        "dummy_parent.html" if request.path[:6] == "/ajax/" else "base.html"
-    )
+    parent_template = "dummy_parent.html" if request.path[:6] == "/ajax/" else "base.html"
     return {"parent_template": parent_template}
 
 
@@ -87,9 +85,7 @@ def airports():
     limit = int(request.args.get("limit")) or 1
     find_closest_city = request.args.get("find_closest_city") == "true"
 
-    redis_key = "|".join(
-        ["airports", str(lat), str(lng), str(limit), str(find_closest_city)]
-    )
+    redis_key = "|".join(["airports", str(lat), str(lng), str(limit), str(find_closest_city)])
 
     try:
         result = redis_store.get(redis_key)
@@ -103,9 +99,7 @@ def airports():
 
     if find_closest_city:
         # Try to find with PostgresSQL.
-        result["closest_city"] = next(
-            iter(City.get_closest_cities(lat, lng, 1) or []), None
-        )
+        result["closest_city"] = next(iter(City.get_closest_cities(lat, lng, 1) or []), None)
 
     if redis_is_connected:
         redis_store.set(redis_key, pickle.dumps(result), 86400)
@@ -145,9 +139,7 @@ def get_cities():
     sw_lng = float(request.args.get("sw_lng"))
     sw_lat = float(request.args.get("sw_lat"))
 
-    redis_key = "|".join(
-        ["get_cities", str(ne_lng), str(ne_lat), str(sw_lng), str(sw_lat)]
-    )
+    redis_key = "|".join(["get_cities", str(ne_lng), str(ne_lat), str(sw_lng), str(sw_lat)])
 
     # Try to find with Redis.
     try:
