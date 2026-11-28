@@ -9,7 +9,7 @@ psycopg2-binary==2.9.13
 psycopg==3.3.9
 python-dateutil==4.0.0
 pytz==2026.6
-redis==8.1.0
+redis==8.2.0
 requests==2.34.2
 Shapely==2.2.0
 SQLAlchemy==2.1.9
